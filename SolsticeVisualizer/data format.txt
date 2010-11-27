@@ -1,0 +1,122 @@
+I've started to analyze the ROM data for Solstice, and will document my findings here to share with the community. My ultimate goal is to make a multipurpose editor for altering rooms, palettes, etc..
+
+Here is what I've discovered so far:
+(until I fully understand the room structure and storage format, expect everything that follows to be a mish-mash of misunderstandings, uncertain ideas, untruthitudes, and outright lies. you've been warned)
+
+
+General Room Info
+
+Here is a spreadsheet I put together that details each room's data, it's place in RAM/ROM, it's reference in the pointer table, and a short description of special rooms (highlighted):
+http://jwurmz.cinnamonpirate.com/pub/solsticeroomdetail.xls
+
+* There seem to be 256 rooms total, including the room where Mobius kidnaps the princess and the scene where you fight Mobius. I found a second set of data for room 00; this set is the same as the first with regards to room size and block placement, but it only has one exit which leads to 01 (the exits for room 02 and 0C have been removed). I suppose the developers went with the first set of data (that which you see normally) because it offers a quick shortcut in the game. Also, there is a second reference for the real room 00 in the pointer table. Technically, this means that there is the capability for making an extra room in the game without the need for ASM hacking.
+
+* The pointer table for room data starts at offset 18010. This table is only 506 bytes long, allowing for only 253 rooms to be addressed -- the 'hidden' room 00 and the 2 rooms with Mobius and the princess are addressed elsewhere in the ROM.
+
+* Each room can be anywhere from 3x3 units to 7x7units, although entities and blocks can be placed outside of these constraints without crashing the engine. All rooms are effectively the same height, but again, entities and blocks can be placed so high that they are completely offscreen without crashing the engine. Nothing can be placed below the floor as it is considered ground zero.
+
+* Each set of room data is of variable length; length is dependent on how much stuff is in a room -- how many exits, monsters, items, blocks, etc.. The width and the height of the room don't directly affect the size of the room's data in storage. 
+
+Room Storage Format
+
+* The first 3 bytes of the room data correspond to the 3 colors used for the walls and floor.
+
+* The next byte determines the room size.
+
+* The next byte determines how many entities are in the room. All entities are non-geometric and usually not stationary (e.g. floating platforms, enemies, switches, items). This byte is required in the room data, but it can be 00 if there are no entities in the room.
+
+* If the room includes entities, there will be 5 bytes to describe each entity. For each, the first byte is the entity type. The second byte is the XY position of the entity (bits 8-5 are X axis, 4-1 are Y axis). The next byte is the Z position of the entity. The next two bytes correspond to the 2 colors that are assigned to that entity.
+
+* The next 2 bytes are masks for the # of windows on each wall.
+
+* The next 2 bytes define the types of walls, 1 byte for each wall. 
+
+* The next 2 bytes define each of the 2 floor layers, 1 byte for each layer. The top 4 bits determine the behavior of tiles in that layer and the bottom 4 bits are the floor type (cosmetic).
+
+* The next 7 bytes are a mask that determine which floor layer is visible at a given XY grid spot.
+
+* The next byte describes how many exits there are in a room, the 'exit mask' as I call it. The 4 lower bits detail which walls have an exit.
+
+* Following the 'exit mask' will be sets of data detailing where each exit goes and where on the wall it appears at, 1 set of data for each exit. I've dubbed these the 'exit behavior bytes'. Each set of data is 2 bytes: 1 byte for the exit destination room number and 1 byte for the exit placement. If the 'exit behavior bytes' correspond to an exit in the floor or ceiling, then the room destination is in the first byte and the second byte is 00. If the 'exit behavior bytes' correspond to an exit in one of the walls, the position is stored in the first byte and the second byte is the room destination. 
+
+* After the 'exit behavior bytes' is a byte to tell how many simple blocks are in the room. Simple blocks describe a single piece of stationary geometry (other than the floor or walls) that is not considered an entity and is static. Blocks inherit their color scheme from the same scheme that is defined for the floors and walls. This byte is required in the room structure, even if there are no blocks (set to 00 if no blocks are present).
+
+* Next are the groups of data that define each block in the room. Simple blocks are only 4 bytes long: the first being the block type, followed by the xy location of the block, then the z location, and the last byte being a flag byte "80" to designate that there are no extended properties defined for this block. To enable extended properties, this byte will be set to "00" and there will be more data following it. It seems to be limited to 12 bytes: 3 4-byte chunks of PPU tile references. 
+
+* The next byte in the room data structure tells how many dynamic blocks are in the level. A dynamic block is a block that disappears, a conveyor, a set of spikes (that aren't part of the floor), etc..
+
+* Next are groups of data that define the dynamic blocks in the room. They are 4 bytes each: block type (cosmetic), xy, z, block type (functional). Depending on the value of [block type (functional)], there may be 12 or 36 bytes following it. If there are 12 bytes, all of these bytes will be PPU tile references. If there are 36 bytes, 24 of them will be PPU tile references and the other 12 bytes' functions are unknown at this time.
+
+To illustrate, here is what is possible in any given room:
+
+Required, size	Option #1, size	Option #2, size
+Palette Info, 3
+Level Size, 1
+# of Entities, 1	Entity Properties, 5 each
+Window Masks, 2
+Wall Types, 2
+Floor Layers, 2
+Floor Layers Mask, 7
+Exit Mask, 1	Exit Properties, 2
+# of Basic Blocks, 1	Basic Block Properties, 4	Basic Block Extended Properties, 12 each
+# of Dynamic Blocks, 1	Dynamic Block Properties, 4	Dynamic Block Extended Properties, 12 or 36 each
+
+...makes up the level structure.  
+
+Room Sizes
+
+Rooms can be a maximum of 7x7 units and a minimum of 3x3 units. The following is a table of valid hex values for the room size byte:
+
+7x7: 00   6x7: 01   5x7: 03   4x7: 05   3x7: 07
+7x6: 02   6x6: 09   5x6: 0A   4x6: 0C   3x6: 0E
+7x5: 04   6x5: 0B   5x5: 10   4x5: 11   3x5: 13
+7x4: 06   6x4: 0D   5x4: 12   4x4: 15   3x4: 16
+7x3: 08   6x3: 0F   5x3: 14   4x3: 17   3x3: 18
+
+Exits
+
+Each room can have 6 exits defined: NW, NE, SE, SW, Ceiling, and Floor. The exit byte is a mask using 6 bits to toggle an exit on or off:
+
+Ceiling: 00100000
+Floor: 00010000
+NW: 00001000
+NE: 00000100
+SE: 00000010
+SW: 00000001
+
+Walls
+
+There seem to be 23 different wall types (defined by bits 5 thru 1 in wall byte):
+
+00 - bricks 1
+01 - bricks 2
+02 - cave 1
+03 - crates 1
+04 - bricks 3 
+05 - bricks 4
+06 - fence 1
+07 - stone 1
+08 - logs 1
+09 - logs 2
+0A - logs 3
+0B - logs 4
+0C - trees 1
+0D - trees 2
+0E - trees 3
+0F - cave 2
+10 - cave 3
+11 - cave 4
+12 - stone 2
+13 - stone 3
+14 - fence 2
+15 - fence 3
+16 - crates 2
+
+Entities
+(coming soon)
+
+Simple Blocks
+(coming soon)
+
+Dynamic Blocks
+(coming soon)

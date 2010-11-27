@@ -1,0 +1,121 @@
+File offsets:
+-------------
+Code at 0xB1A8 loads room size data from 0xC15C memory address which maps from 0x415C in the ROM.
+
+    0x0415C:
+        room_type_descriptor[24].
+        room_type_descriptor = {
+            [0]: unknown byte, varies.
+            [1]: unknown byte, always == 0x21
+            [2]: room width
+            [3]: room height
+        }
+
+        X:  the room type number, since can only be 24 distinct room size combinations between 3x3 and 7x7 with a minimum of 3 and a maximum of 7 per each dimension.
+
+    Table of room data addresses:
+        0x18000-0x180FC:    LSB of address of room data.
+        0x180FD-0x181f9:    MSB of address of room data.
+
+        Combining MSB with LSB gives word address like 0x86DD (e.g. room #9).  To find ROM location, add 0x10000 to word address.
+
+    0x18388: start of actual room data.
+        [0]: 0x62 length
+        [1]: 0x19 length
+        [2]: 0x40 length
+        . . .
+        implies compression or variable length records.
+
+    Room data struct:
+        room_data[0]: Adjacent/connecting room number
+        room_data[1]: Adjacent/connecting room #s
+        room_data[2]: Adjacent/connecting room #s
+        room_data[3]: room_type_descriptor[] index, look up from 0x0415C.
+
+Functions:
+-------------------------
+    0xB1A3 function:
+        Inputs:
+            0x0029: room number type (0 to 24) range, determines size of room.
+        Outputs:
+            0x0026: 1st byte of room descriptor struct.
+            0x001D: 1st byte of room descriptor struct.
+            0x0027: 2nd byte of room descriptor struct.
+            0x001E: 2nd byte of room descriptor struct.
+            0x000D: Room width
+            0x002A: Room width
+            0x000E: Room height
+            0x002B: Room height
+
+    0xA750 function:
+        Inputs:
+            0x0015: room number?
+
+    0xFEBF function:
+        Loads address of room data into 0x0016 word.
+
+    0xFED9 function:
+        Loads data from ROM at index Y to reg A
+
+Mapped memory locations:
+------------------------
+    0x8000-0x80FC: LSB of address of room data.
+    0x80FD-0x81F9: MSB of address of room data.
+        Proven by 0xFEBF function.
+
+    0x000D: Room width
+    0x000E: Room height
+
+    0x0026: 1st byte of room descriptor struct.
+    0x0027: 2nd byte of room descriptor struct.
+
+    0x002A: Room width
+    0x002B: Room height
+
+    0xB689: powerof2 == [02, 04, 08, 10, 20, 40, 80]
+
+    0xC108: addr0_lo[]
+    0xC119: addr0_hi[]
+    0xC12A: addr1_lo[], indexed by room_type_descriptor_index
+    0xC143: addr1_hi[], indexed by room_type_descriptor_index
+
+    0xC15C: room_type_descriptor[]
+
+    // 
+    0x07B3: start_x = (room_type_descriptor[1] >> 4)      // == 2
+    0x07B4: start_y = (room_type_descriptor[1] & 0x0F)    // == 1
+    0x07B5: n2 = room_type_descriptor[2]
+
+    0x00EB: temp addr0_lo
+    0x00EC: temp addr0_hi
+
+    0x00EF: number of blocks in room
+
+    0x001C: room_type_descriptor[3]
+    0x001D: 1st byte of room descriptor struct.
+    0x001E: 2nd byte of room descriptor struct.
+
+    0x0013: m0 = ((n1 - n0) * 2) + addr1_lo[room_type_descriptor_index]
+    0x0014: m1 = (n1 + n0 + addr1_hi[room_type_descriptor_index]) - n2
+
+    0x0101: room_data[0]
+    0x0102: room_data[1]
+    0x0103: room_data[2]
+
+    0x0300: collisionmap[16][16]
+        Square matrix with rows aligned each 16 bytes.
+        Each entry is a bitmap of which Z-slots are solid.
+
+    Calculate via pseudo-code:
+        x = (start_x * 2) + 1;
+        y = (start_y * 2) + 1;
+
+        void setmap(x,y,n2) {
+            idx = (y << 4) + x;
+            collisionmap[idx] |= powerof2[n2];
+        }
+
+        setmap(x,y,n2);
+        setmap(x+1,y,n2);
+        setmap(x+1,y+1,n2);
+        setmap(x,y+1,n2);

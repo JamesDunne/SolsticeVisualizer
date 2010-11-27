@@ -306,6 +306,11 @@ namespace SolsticeVisualizer
                         {
                             br.Read(extra, 0, 36);
                         }
+                        else if (dummy[3] == 7)
+                        {
+                            // Teleport launch?
+                            br.Read(extra, 0, 12);
+                        }
                         else
                         {
                             // TODO: determine when to read extra block data

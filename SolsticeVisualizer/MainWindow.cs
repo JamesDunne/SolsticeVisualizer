@@ -44,8 +44,7 @@ namespace SolsticeVisualizer
             GL.LineWidth(1.5f);
 
             gameData = new GameData(@"..\..\Solstice (U).nes");
-            //loadRoom(0);
-            loadRoom(6);
+            loadRoom(0);
 
             Keyboard.KeyDown += new EventHandler<OpenTK.Input.KeyboardKeyEventArgs>(Keyboard_KeyDown);
         }
@@ -338,7 +337,7 @@ namespace SolsticeVisualizer
             // Draw the wall outline:
             GL.Color3(0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            drawOpenCube(room.Width + 0.1f, 8.0f, room.Height + 0.1f);
+            drawOpenCube(room.Width, 8.0f, room.Height);
             GL.PopMatrix();
 
             // Draw floor sections:

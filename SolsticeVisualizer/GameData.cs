@@ -12,8 +12,15 @@ namespace SolsticeVisualizer
         public byte[] RawImage;
         public int[] RoomIndicies;
 
-        public GameData(string path)
+        private GameData()
         {
+        }
+
+        public static GameData LoadFromRom(string path)
+        {
+            if (!File.Exists(path)) return null;
+
+            GameData gd = new GameData();
             using (Stream str = File.OpenRead(path))
             {
                 int a1, a2, a3, a4;
@@ -27,19 +34,21 @@ namespace SolsticeVisualizer
                 {
                     // Strip off the header and get to the good stuff:
                     str.Seek(16, SeekOrigin.Begin);
-                    RawImage = new byte[str.Length - 16];
-                    str.Read(RawImage, 0, RawImage.Length);
+                    gd.RawImage = new byte[str.Length - 16];
+                    str.Read(gd.RawImage, 0, gd.RawImage.Length);
                 }
                 else
                 {
                     // Read the raw image:
                     str.Seek(0, SeekOrigin.Begin);
-                    RawImage = new byte[str.Length];
-                    str.Read(RawImage, 0, RawImage.Length);
+                    gd.RawImage = new byte[str.Length];
+                    str.Read(gd.RawImage, 0, gd.RawImage.Length);
                 }
             }
 
-            getRoomIndicies();
+            gd.getRoomIndicies();
+
+            return gd;
         }
 
         private void getRoomIndicies()

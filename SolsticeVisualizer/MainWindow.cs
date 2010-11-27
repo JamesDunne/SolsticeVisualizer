@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -17,7 +18,7 @@ namespace SolsticeVisualizer
         const float rotation_speed = 15.0f;
         float angle;
 
-        GameData gameData;
+        GameData gameData = null;
 
         private Room room;
         private float rmHalfWidth;
@@ -32,18 +33,35 @@ namespace SolsticeVisualizer
             string version = GL.GetString(StringName.Version);
             int major = (int)version[0];
             int minor = (int)version[2];
-            if (major <= 1 && minor < 5)
-            {
-                System.Windows.Forms.MessageBox.Show("You need at least OpenGL 1.5 to run this example. Aborting.", "VBOs not supported",
-                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
-                this.Exit();
-            }
+            //if (major <= 1 && minor < 5)
+            //{
+            //    System.Windows.Forms.MessageBox.Show("You need at least OpenGL 1.5 to run this example. Aborting.", "VBOs not supported",
+            //        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+            //    this.Exit();
+            //}
 
             GL.ClearColor(System.Drawing.Color.Black);
             GL.Enable(EnableCap.DepthTest);
             GL.LineWidth(1.5f);
 
-            gameData = new GameData(@"..\..\Solstice (U).nes");
+            Queue<string> args = new Queue<string>( Environment.GetCommandLineArgs().Skip(1) );
+            if (args.Count >= 1)
+            {
+                string path = args.Dequeue();
+                gameData = GameData.LoadFromRom(path);
+            }
+
+            if (gameData == null)
+                gameData = GameData.LoadFromRom(@"Solstice (U).nes");
+            if (gameData == null)
+                gameData = GameData.LoadFromRom(@"..\..\Solstice (U).nes");
+            
+            if (gameData == null)
+            {
+                System.Windows.Forms.MessageBox.Show("Could not find Solstice ROM image!", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+                this.Exit();
+            }
+
             loadRoom(0);
 
             Keyboard.KeyDown += new EventHandler<OpenTK.Input.KeyboardKeyEventArgs>(Keyboard_KeyDown);

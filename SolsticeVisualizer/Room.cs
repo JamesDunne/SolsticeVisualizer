@@ -26,6 +26,7 @@ namespace SolsticeVisualizer
         public FloorCosmeticType Floor2Cosmetic { get; set; }
 
         public bool[,] FloorVisible { get; set; }
+        public bool[,] RenderFloor { get; set; }
 
         public StaticBlock[] StaticBlocks { get; set; }
 

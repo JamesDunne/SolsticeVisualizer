@@ -70,7 +70,7 @@ namespace SolsticeVisualizer
             //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Emission, new Color4(0f, 0f, 0f, 1f));
 
             // Flat shading model gives more of a NES feel:
-            GL.ShadeModel(ShadingModel.Flat);
+            GL.ShadeModel(ShadingModel.Smooth);
 
             // Avoid stitching lines as much as possible, especially when outlining solid quads:
             GL.Enable(EnableCap.PolygonOffsetFill);
@@ -80,6 +80,9 @@ namespace SolsticeVisualizer
 
             GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);	// Use The Good Calculations
             GL.Enable(EnableCap.LineSmooth);			// Enable Anti-Aliasing
+
+            // Cull back-facing polygons:
+            GL.CullFace(CullFaceMode.Back);
 
             // Process command-line args:
             Queue<string> args = new Queue<string>(Environment.GetCommandLineArgs());
@@ -300,15 +303,11 @@ namespace SolsticeVisualizer
         {
             GL.PushAttrib(AttribMask.AllAttribBits);
 
-            //GL.Enable(EnableCap.PolygonOffsetFill); // Avoid Stitching!
-            //GL.PolygonOffset(1.0f, 1.0f);
             drawSolidCube(w, z, h);
-            //GL.Disable(EnableCap.PolygonOffsetFill);
 
             GL.Color4(0f, 0f, 0f, 1f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             drawSolidCube(w, z, h);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             GL.PopAttrib();
         }
@@ -384,15 +383,11 @@ namespace SolsticeVisualizer
         {
             GL.PushAttrib(AttribMask.AllAttribBits);
 
-            //GL.Enable(EnableCap.PolygonOffsetFill); // Avoid Stitching!
-            //GL.PolygonOffset(1.0f, 1.0f);
             drawSolidFlat(w, z, h);
-            //GL.Disable(EnableCap.PolygonOffsetFill);
 
             GL.Color4(0f, 0f, 0f, 1f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             drawSolidFlat(w, z, h);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             GL.PopAttrib();
         }
@@ -415,15 +410,11 @@ namespace SolsticeVisualizer
         {
             GL.PushAttrib(AttribMask.AllAttribBits);
 
-            //GL.Enable(EnableCap.PolygonOffsetFill); // Avoid Stitching!
-            //GL.PolygonOffset(1.0f, 1.0f);
             drawSmallTiles(w, z, h);
-            //GL.Disable(EnableCap.PolygonOffsetFill);
 
             GL.Color4(0f, 0f, 0f, 1f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             drawSmallTiles(w, z, h);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             GL.PopAttrib();
         }
@@ -457,48 +448,62 @@ namespace SolsticeVisualizer
             GL.End();
         }
 
-        private void circleNormal(int i, float r, float x, float y, float z)
+        const int circlePoints = 12;
+
+        private void circleNormal(int i, int n, float r, float x, float y, float z)
         {
-            double angle = i * Math.PI / 8.0d;
-            GL.Normal3(Math.Cos(angle), 0f, Math.Sin(angle));
+            double angle = i * Math.PI / (double)(n * 0.5d);
+            GL.Normal3(Math.Cos(angle), y, Math.Sin(angle));
         }
 
-        private void circleVertex(int i, float r, float x, float y, float z)
+        private void circleVertex(int i, int n, float r, float x, float y, float z)
         {
-            double angle = i * Math.PI / 8.0d;
+            double angle = i * Math.PI / (double)(n * 0.5d);
             GL.Vertex3(x + Math.Cos(angle) * r, y, z + Math.Sin(angle) * r);
         }
 
         private void drawSingleSpike(float x, float y)
         {
+            // A vertically oriented cone rendered with a triangle fan with the center point at the tip of the cone:
             GL.Begin(BeginMode.TriangleFan);
-            GL.Vertex3(x, 0.25f, y);
-            for (int i = 0; i <= 16; ++i)
+            GL.Normal3(0f, 1f, 0f);
+            GL.Vertex3(x, 0.19f, y);
+            for (int i = 0; i <= circlePoints; ++i)
             {
-                circleNormal(i, 0.125f, x, 0f, y);
-                circleVertex(i, 0.125f, x, 0f, y);
+                circleNormal(i, circlePoints, 0.075f, x, 0.707f, y);
+                circleVertex(i, circlePoints, 0.075f, x, 0f, y);
             }
             GL.End();
         }
 
         private void drawBedOfSpikes()
         {
+#if false
+            // 2x2:
             drawSingleSpike(-0.25f, -0.25f);
             drawSingleSpike(0.25f, -0.25f);
             drawSingleSpike(0.25f, 0.25f);
             drawSingleSpike(-0.25f, 0.25f);
+#else
+            const int div = 3;
+            const int offs = (div - 1) / 2;
+            const float frac = (1f / div);
+            for (int r = 0; r < div; ++r)
+                for (int c = 0; c < div; ++c)
+                    drawSingleSpike((c - offs) * frac, (r - offs) * frac);
+#endif
         }
 
         private void drawVerticalCylinder(float r, float x, float z, float y)
         {
             // Draw outer shell:
             GL.Begin(BeginMode.QuadStrip);
-            for (int i = 0; i <= 16; ++i)
+            for (int i = 0; i <= circlePoints; ++i)
             {
                 double ang = ((double)i - 0.5d) * Math.PI / 8.0f;
-                circleNormal(i, r, 0f, 0, 0f);
-                circleVertex(i, r, x, 0, y);
-                circleVertex(i, r, x, z, y);
+                circleNormal(i, circlePoints, r, 0f, 0f, 0f);
+                circleVertex(i, circlePoints, r, x, 0, y);
+                circleVertex(i, circlePoints, r, x, z, y);
             }
             GL.End();
         }
@@ -509,9 +514,9 @@ namespace SolsticeVisualizer
             GL.Begin(BeginMode.TriangleFan);
             GL.Normal3(0f, 1f, 0f);
             GL.Vertex3(0f, z, 0f);
-            for (int i = 0; i <= 16; ++i)
+            for (int i = 0; i <= circlePoints; ++i)
             {
-                circleVertex(i, r, x, z, y);
+                circleVertex(i, circlePoints, r, x, z, y);
             }
             GL.End();
         }
@@ -556,15 +561,11 @@ namespace SolsticeVisualizer
         {
             GL.PushAttrib(AttribMask.AllAttribBits);
 
-            //GL.Enable(EnableCap.PolygonOffsetFill); // Avoid Stitching!
-            //GL.PolygonOffset(1.0f, 1.0f);
             drawPyramidSpikes(w, z, h);
-            //GL.Disable(EnableCap.PolygonOffsetFill);
 
             GL.Color4(0f, 0f, 0f, 1f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             drawPyramidSpikes(w, z, h);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             GL.PopAttrib();
         }
@@ -579,19 +580,20 @@ namespace SolsticeVisualizer
 
         private void drawTopHemisphere(float z, float r)
         {
-            const int slices = 16;
+            const int slices = 8;
 
             // Draw top of sphere as a triangle fan around the top-most point.
             GL.Begin(BeginMode.TriangleFan);
+            GL.Normal3(0f, 1f, 0f);
             GL.Vertex3(0f, (z + r) * zscale, 0f);
             int j = 1;
-            for (int i = 0; i <= 16; ++i)
+            for (int i = 0; i <= circlePoints; ++i)
             {
                 double jangle = j * 0.5d * Math.PI / (double)slices;
                 float z1 = (float)Math.Cos(jangle);
                 float r1 = (float)Math.Sin(jangle);
-                circleNormal(i, r * r1, 0f, 0f, 0f);
-                circleVertex(i, r * r1, 0f, (z * zscale + r * z1), 0f);
+                circleNormal(i, circlePoints, r * r1, 0f, z1, 0f);
+                circleVertex(i, circlePoints, r * r1, 0f, (z * zscale + r * z1), 0f);
             }
             GL.End();
 
@@ -606,11 +608,11 @@ namespace SolsticeVisualizer
                 float r2 = (float)Math.Sin(j2angle);
 
                 GL.Begin(BeginMode.QuadStrip);
-                for (int i = 0; i <= 16; ++i)
+                for (int i = 0; i <= circlePoints; ++i)
                 {
-                    circleNormal(i, r * (r1 + r2) * 0.5f, 0f, 0f, 0f);
-                    circleVertex(i, r * r1, 0f, (z * zscale + r * z1), 0f);
-                    circleVertex(i, r * r2, 0f, (z * zscale + r * z2), 0f);
+                    circleNormal(i, circlePoints, r * (r1 + r2) * 0.5f, 0f, z1, 0f);
+                    circleVertex(i, circlePoints, r * r1, 0f, (z * zscale + r * z1), 0f);
+                    circleVertex(i, circlePoints, r * r2, 0f, (z * zscale + r * z2), 0f);
                 }
                 GL.End();
             }
@@ -618,19 +620,20 @@ namespace SolsticeVisualizer
 
         private void drawBottomHemisphere(float z, float r)
         {
-            const int slices = 16;
+            const int slices = 8;
 
             // Draw top of sphere as a triangle fan around the top-most point.
             GL.Begin(BeginMode.TriangleFan);
+            GL.Normal3(0f, -1f, 0f);
             GL.Vertex3(0f, (z - r) * zscale, 0f);
             int j = 1;
-            for (int i = 16; i >= 0; --i)
+            for (int i = 0; i <= circlePoints; ++i)
             {
                 double jangle = j * 0.5d * Math.PI / (double)slices;
                 float z1 = (float)Math.Cos(jangle);
                 float r1 = (float)Math.Sin(jangle);
-                circleNormal(i, r * r1, 0f, 0f, 0f);
-                circleVertex(i, r * r1, 0f, (z * zscale - r * z1), 0f);
+                circleNormal(i, circlePoints, r * r1, 0f, -z1, 0f);
+                circleVertex(i, circlePoints, r * r1, 0f, (z * zscale - r * z1), 0f);
             }
             GL.End();
 
@@ -645,11 +648,11 @@ namespace SolsticeVisualizer
                 float r2 = (float)Math.Sin(j2angle);
 
                 GL.Begin(BeginMode.QuadStrip);
-                for (int i = 16; i >= 0; --i)
+                for (int i = 0; i <= circlePoints; ++i)
                 {
-                    circleNormal(i, r * (r1 + r2) * 0.5f, 0f, 0f, 0f);
-                    circleVertex(i, r * r1, 0f, (z * zscale - r * z1), 0f);
-                    circleVertex(i, r * r2, 0f, (z * zscale - r * z2), 0f);
+                    circleNormal(i, circlePoints, r * (r1 + r2) * 0.5f, 0f, -z1, 0f);
+                    circleVertex(i, circlePoints, r * r1, 0f, (z * zscale - r * z1), 0f);
+                    circleVertex(i, circlePoints, r * r2, 0f, (z * zscale - r * z2), 0f);
                 }
                 GL.End();
             }
@@ -667,6 +670,7 @@ namespace SolsticeVisualizer
                 (z * zscale),
                 (y - rmHalfHeight + 0.5f)
             );
+            GL.Scale(1f - 0.01f, 1f - (0.01f / zscale), 1f - 0.01f);
             switch (ty)
             {
                 case BlockCosmeticType.Solid:
@@ -874,10 +878,10 @@ namespace SolsticeVisualizer
                 case EntityType.Hemisphere:
                     // Draw bottom hemisphere:
                     setFGGLColor(ent.Color1);
-                    drawBottomHemisphere(0.5f, 0.25f);
+                    drawBottomHemisphere(0.75f, 0.275f);
                     // Draw top circle:
                     setFGGLColor(ent.Color2);
-                    drawFlatCircle(0.25f, 0f, 0.5f * zscale, 0f);
+                    drawFlatCircle(0.275f, 0f, 0.75f * zscale, 0f);
                     break;
                 case EntityType.MovingLift:
                     setFGGLColor(ent.Color1);
@@ -900,7 +904,6 @@ namespace SolsticeVisualizer
         {
             GL.PushMatrix();
             GL.Translate(c - rmHalfWidth + 0.5f, 0.0f, r - rmHalfHeight + 0.5f);
-            //GL.Translate(rmHalfWidth - c + 0.5f, 0.0f, rmHalfHeight - r + 0.5f);
             switch (floorCosmeticType)
             {
                 case FloorCosmeticType.Stone:
@@ -909,6 +912,8 @@ namespace SolsticeVisualizer
                     break;
                 case FloorCosmeticType.BedOfSpikes2:
                 case FloorCosmeticType.BedOfSpikes:
+                    setBGGLColor(room.Palette[1], 0.1f);
+                    drawSolidFlat(1.0f, 0.0f, 1.0f);
                     setBGGLColor(room.Palette[2]);
                     drawBedOfSpikes();
                     break;
@@ -1032,6 +1037,13 @@ namespace SolsticeVisualizer
             GL.Color4(clr.R, clr.G, clr.B, (byte)255);
         }
 
+        private void setBGGLColor(int pidx, float scale)
+        {
+            Color clr = getColorByBGPalette(pidx);
+            float multiplier = scale / 255f;
+            GL.Color4(clr.R * multiplier, clr.G * multiplier, clr.B * multiplier, 1f);
+        }
+
         private void setBGGLColorAlpha(int pidx, byte alpha)
         {
             Color clr = getColorByBGPalette(pidx);
@@ -1046,13 +1058,14 @@ namespace SolsticeVisualizer
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            Matrix4 lookat = Matrix4.LookAt(7, 5, 7, 1, 1, 1, 0, 1, 0);
+            //Matrix4 lookat = Matrix4.LookAt(7, 5, 7, 1, 1, 1, 0, 1, 0);
+            Matrix4 lookat = Matrix4.LookAt(room.Width / 2 + 4, 4, room.Height / 2 + 4, 0, 1, 0, 0, 1, 0);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadMatrix(ref lookat);
 
             // Auto-rotate the room about the Y axis:
             angle += rotation_speed * (float)e.Time;
-            GL.Rotate(5f + Math.Cos(angle * Math.PI / 180.0f) * 15f, 0.0f, 1.0f, 0.0f);
+            GL.Rotate(0f + Math.Cos(angle * Math.PI / 180.0f) * 30f, 0.0f, 1.0f, 0.0f);
             //GL.Rotate(angle, 0.0f, 1.0f, 0.0f);
 
 #if false
@@ -1200,20 +1213,26 @@ namespace SolsticeVisualizer
                     }
                 }
             }
+
             // Enable fill mode again:
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             // Draw floor sections:
             for (int r = 0; r < room.Height; ++r)
                 for (int c = 0; c < room.Width; ++c)
-                    if (room.FloorVisible[r, c])
+                    if (room.RenderFloor[r, c])
                     {
-                        drawFloor(room.Floor1Cosmetic, c, r);
+                        if (room.FloorVisible[r, c])
+                        {
+                            drawFloor(room.Floor1Cosmetic, c, r);
+                        }
+                        else// if (room.Floor2Behavior != room.Floor1Behavior)
+                        {
+                            drawFloor(room.Floor2Cosmetic, c, r);
+                        }
                     }
-                    else// if (room.Floor2Behavior != room.Floor1Behavior)
-                    {
-                        drawFloor(room.Floor2Cosmetic, c, r);
-                    }
+
+            // TODO: enable shadowing here
 
             // Draw static blocks:
             for (int i = 0; i < room.StaticBlocks.Length; ++i)

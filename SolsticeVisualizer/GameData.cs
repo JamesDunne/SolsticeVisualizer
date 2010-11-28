@@ -162,6 +162,15 @@ namespace SolsticeVisualizer
                         {true, true, true, true, true, true, true},
                         {true, true, true, true, true, true, true}
                     },
+                    RenderFloor = new bool[7, 7] {
+                        {true, true, true, true, true, true, true},
+                        {true, true, true, true, true, true, true},
+                        {true, true, true, true, true, true, true},
+                        {true, true, true, true, true, true, true},
+                        {true, true, true, true, true, true, true},
+                        {true, true, true, true, true, true, true},
+                        {true, true, true, true, true, true, true}
+                    },
                     Palette = new int[3] { 43, 9, 17 },
                     WallNW = WallType.Logs4,
                     WallNE = WallType.Logs4,
@@ -227,9 +236,13 @@ namespace SolsticeVisualizer
 
                 // Fill out floor visibility 2D array:
                 rm.FloorVisible = new bool[rm.Height, rm.Width];
+                rm.RenderFloor = new bool[rm.Height, rm.Width];
                 for (int r = 0; r < rm.Height; ++r)
                     for (int c = 0; c < rm.Width; ++c)
+                    {
+                        rm.RenderFloor[r, c] = true;
                         rm.FloorVisible[r, c] = (k[c] & (1 << (r + 1))) != 0;
+                    }
 
                 // Exits:
                 byte exitMask = br.ReadByte();
@@ -298,10 +311,25 @@ namespace SolsticeVisualizer
                     for (int i = 0; i < blockCount; ++i)
                     {
                         br.Read(k, 0, 4);
-                        rm.StaticBlocks[i] = new StaticBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2] & 15);
+                        var blk = new StaticBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2] & 15);
+                        rm.StaticBlocks[i] = blk;
                         if (k[3] == 0x00)
                         {
                             br.Read(extra, 0, 12);
+                        }
+
+                        // Determine whether this block overrides a floor tile, to prevent things like spikes from
+                        // shooting up into this block.
+                        if ((blk.Z == 0) &&
+                            // One of the solid block types:
+                            ((blk.CosmeticType == BlockCosmeticType.Solid) ||
+                             (blk.CosmeticType == BlockCosmeticType.ConveyerEW) ||
+                             (blk.CosmeticType == BlockCosmeticType.ConveyerNS) ||
+                             (blk.CosmeticType == BlockCosmeticType.PyramidSpikes) ||
+                             (blk.CosmeticType == BlockCosmeticType.SandwichBlock)
+                            ))
+                        {
+                            rm.RenderFloor[blk.Y, blk.X] = false;
                         }
                     }
                 }
@@ -316,21 +344,32 @@ namespace SolsticeVisualizer
                     for (int i = 0; i < blockCount; ++i)
                     {
                         br.Read(k, 0, 4);
-                        rm.DynamicBlocks[i] = new DynamicBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2], (BlockFunctionalType)k[3]);
+                        var blk = new DynamicBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2], (BlockFunctionalType)k[3]);
+                        rm.DynamicBlocks[i] = blk;
 
-                        if (k[3] == 4)
+                        // This extra data is PPU tile references for the NES:
+                        if (blk.FunctionalType == BlockFunctionalType.DisappearsWhenTouched)
                         {
                             br.Read(extra, 0, 36);
                         }
-                        else if (k[3] == 7)
-                        {
-                            // Teleportor pad:
-                            br.Read(extra, 0, 12);
-                        }
                         else
                         {
-                            // TODO: determine when to read extra block data
                             br.Read(extra, 0, 12);
+                        }
+
+                        // Determine whether this block overrides a floor tile, to prevent things like spikes from
+                        // shooting up into this block.
+                        if ((blk.Z == 0) &&
+                            (blk.FunctionalType != BlockFunctionalType.AppearsWhenTouched) &&
+                            // One of the solid block types:
+                            ((blk.CosmeticType == BlockCosmeticType.Solid) ||
+                             (blk.CosmeticType == BlockCosmeticType.ConveyerEW) ||
+                             (blk.CosmeticType == BlockCosmeticType.ConveyerNS) ||
+                             (blk.CosmeticType == BlockCosmeticType.PyramidSpikes) ||
+                             (blk.CosmeticType == BlockCosmeticType.SandwichBlock)
+                            ))
+                        {
+                            rm.RenderFloor[blk.Y, blk.X] = false;
                         }
                     }
                 }

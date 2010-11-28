@@ -21,7 +21,7 @@ namespace SolsticeVisualizer
         //const int firstRoom = 37;   // pyramid spikes
         //const int firstRoom = 76;       // rounded stones and transparent boxes
         //const int firstRoom = 82;       // sandwich blocks and crystal ball
-        const int firstRoom = 237;
+        const int firstRoom = 243;
 
         const float rotation_speed = 15.0f;
         float angle;
@@ -173,7 +173,7 @@ namespace SolsticeVisualizer
 
         #region Rendering primitives
 
-        const float zscale = 0.5f;
+        const float zscale = 0.3333333f;
 
         private void drawLeftWall(float z, float h)
         {
@@ -548,7 +548,7 @@ namespace SolsticeVisualizer
                 float z1 = (float)Math.Cos(jangle);
                 float r1 = (float)Math.Sin(jangle);
                 circleNormal(i, r * r1, 0f, 0f, 0f);
-                circleVertex(i, r * r1, 0f, (z + r * z1) * zscale, 0f);
+                circleVertex(i, r * r1, 0f, (z * zscale + r * z1), 0f);
             }
             GL.End();
 
@@ -566,8 +566,8 @@ namespace SolsticeVisualizer
                 for (int i = 0; i <= 16; ++i)
                 {
                     circleNormal(i, r * (r1 + r2) * 0.5f, 0f, 0f, 0f);
-                    circleVertex(i, r * r1, 0f, (z + r * z1) * zscale, 0f);
-                    circleVertex(i, r * r2, 0f, (z + r * z2) * zscale, 0f);
+                    circleVertex(i, r * r1, 0f, (z * zscale + r * z1), 0f);
+                    circleVertex(i, r * r2, 0f, (z * zscale + r * z2), 0f);
                 }
                 GL.End();
             }
@@ -587,7 +587,7 @@ namespace SolsticeVisualizer
                 float z1 = (float)Math.Cos(jangle);
                 float r1 = (float)Math.Sin(jangle);
                 circleNormal(i, r * r1, 0f, 0f, 0f);
-                circleVertex(i, r * r1, 0f, (z - r * z1) * zscale, 0f);
+                circleVertex(i, r * r1, 0f, (z * zscale - r * z1), 0f);
             }
             GL.End();
 
@@ -605,8 +605,8 @@ namespace SolsticeVisualizer
                 for (int i = 16; i >= 0; --i)
                 {
                     circleNormal(i, r * (r1 + r2) * 0.5f, 0f, 0f, 0f);
-                    circleVertex(i, r * r1, 0f, (z - r * z1) * zscale, 0f);
-                    circleVertex(i, r * r2, 0f, (z - r * z2) * zscale, 0f);
+                    circleVertex(i, r * r1, 0f, (z * zscale - r * z1), 0f);
+                    circleVertex(i, r * r2, 0f, (z * zscale - r * z2), 0f);
                 }
                 GL.End();
             }
@@ -634,7 +634,7 @@ namespace SolsticeVisualizer
                     setBGGLColor(room.Palette[2]);
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
                     setBGGLColor(room.Palette[0]);
-                    drawTopHemisphere(0.25f, 0.5f);
+                    drawTopHemisphere(0.25f, 0.333f);
                     break;
                 case BlockCosmeticType.StoneSlabHemisphereBottomCap:
                     setBGGLColor(room.Palette[2]);
@@ -643,7 +643,7 @@ namespace SolsticeVisualizer
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
                     GL.PopMatrix();
                     setBGGLColor(room.Palette[0]);
-                    drawBottomHemisphere(0.75f, 0.5f);
+                    drawBottomHemisphere(0.75f, 0.333f);
                     break;
                 case BlockCosmeticType.SandwichBlock:
                     // Bottom solid part:

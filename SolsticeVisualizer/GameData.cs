@@ -162,6 +162,13 @@ namespace SolsticeVisualizer
                         {true, true, true, true, true, true, true},
                         {true, true, true, true, true, true, true}
                     },
+                    Palette = new int[3] { 43, 9, 17 },
+                    WallNW = WallType.Logs4,
+                    WallNE = WallType.Logs4,
+                    Floor1Cosmetic = FloorCosmeticType.ForestDirt,
+                    Floor1Behavior = 0,
+                    Floor2Cosmetic = FloorCosmeticType.ForestDirt,
+                    Floor2Behavior = 0,
                     Entities = new StaticEntity[0],
                     DynamicBlocks = new DynamicBlock[0],
                     StaticBlocks = new StaticBlock[0],

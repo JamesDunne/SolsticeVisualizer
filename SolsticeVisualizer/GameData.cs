@@ -298,7 +298,7 @@ namespace SolsticeVisualizer
                     for (int i = 0; i < blockCount; ++i)
                     {
                         br.Read(k, 0, 4);
-                        rm.StaticBlocks[i] = new StaticBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2]);
+                        rm.StaticBlocks[i] = new StaticBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2] & 15);
                         if (k[3] == 0x00)
                         {
                             br.Read(extra, 0, 12);

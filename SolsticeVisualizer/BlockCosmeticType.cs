@@ -17,6 +17,8 @@ namespace SolsticeVisualizer
         StoneSlabHemisphereTopCap = 8,
         StoneSlabHemisphereBottomCap = 9,
         PyramidSpikes = 10,
+        PyramidalColumnTop = 11,
+        PyramidalColumnBottom = 12,
         TeleporterTop = 15,
         TeleporterPad = 16
     }

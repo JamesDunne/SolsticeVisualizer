@@ -16,12 +16,16 @@ namespace SolsticeVisualizer
 {
     class MainWindow : GameWindow
     {
-        const int firstRoom = 0;
+        //const int firstRoom = 0;
+        const int firstRoom = 248;
+        //const int firstRoom = 42;
+        //const int firstRoom = 192;          // room with special static block
         //const int firstRoom = 36;         // top hemispheres
         //const int firstRoom = 166;        // cylinders
         //const int firstRoom = 37;         // pyramid spikes
         //const int firstRoom = 76;         // rounded stones and transparent boxes
         //const int firstRoom = 82;         // sandwich blocks and crystal ball
+        //const int firstRoom = 25;           // Spikes littered about floor not yet visible
         //const int firstRoom = 243;        // last room
 
         const float rotation_speed = 15.0f;
@@ -42,12 +46,6 @@ namespace SolsticeVisualizer
             string version = GL.GetString(StringName.Version);
             int major = (int)version[0];
             int minor = (int)version[2];
-            //if (major <= 1 && minor < 5)
-            //{
-            //    System.Windows.Forms.MessageBox.Show("You need at least OpenGL 1.5 to run this example. Aborting.", "VBOs not supported",
-            //        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
-            //    this.Exit();
-            //}
 
             GL.ClearColor(System.Drawing.Color.Black);
             GL.Enable(EnableCap.DepthTest);
@@ -62,15 +60,20 @@ namespace SolsticeVisualizer
             GL.Enable(EnableCap.Lighting);
             GL.Enable(EnableCap.Light0);
 
-            GL.Enable(EnableCap.Normalize);
+            // Enable alpha blending for partially-visible blocks:
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
+            // Enable all glColor calls to set the lighting material's ambient and diffuse color:
             GL.Enable(EnableCap.ColorMaterial);
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.AmbientAndDiffuse);
             //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Specular, new Color4(0.2f, 0.2f, 0.2f, 1f));
             //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Emission, new Color4(0f, 0f, 0f, 1f));
 
+            // Flat shading model gives more of a NES feel:
             GL.ShadeModel(ShadingModel.Flat);
 
+            // Avoid stitching lines as much as possible, especially when outlining solid quads:
             GL.Enable(EnableCap.PolygonOffsetFill);
             GL.PolygonOffset(1f, 1f);
 
@@ -486,52 +489,64 @@ namespace SolsticeVisualizer
             drawSingleSpike(-0.25f, 0.25f);
         }
 
-        private void drawVerticalColumn(float w, float z, float h)
+        private void drawVerticalCylinder(float r, float x, float z, float y)
         {
-            // TODO: consider w/2, h/2 as r1 and r2 for ellipse
-
             // Draw outer shell:
             GL.Begin(BeginMode.QuadStrip);
             for (int i = 0; i <= 16; ++i)
             {
                 double ang = ((double)i - 0.5d) * Math.PI / 8.0f;
-                circleNormal(i, 0.5f, 0f, 0f, 0f);
-                circleVertex(i, 0.5f, 0f, 0f, 0f);
-                circleVertex(i, 0.5f, 0f, z * zscale, 0f);
+                circleNormal(i, 0.5f, 0f, 0, 0f);
+                circleVertex(i, 0.5f, x, 0, y);
+                circleVertex(i, 0.5f, x, z, y);
             }
             GL.End();
+        }
 
+        private void drawFlatCircle(float r, float x, float z, float y)
+        {
             // Draw top circle:
             GL.Begin(BeginMode.TriangleFan);
             GL.Normal3(0f, 1f, 0f);
-            GL.Vertex3(0f, z * zscale, 0f);
+            GL.Vertex3(0f, z, 0f);
             for (int i = 0; i <= 16; ++i)
             {
-                circleVertex(i, 0.5f, 0f, z * zscale, 0f);
+                circleVertex(i, r, x, z, y);
             }
             GL.End();
+        }
+
+        private void drawVerticalColumn(float w, float z, float h)
+        {
+            // TODO: consider w/2, h/2 as r1 and r2 for ellipse
+
+            // Draw outer shell:
+            drawVerticalCylinder(0.5f, 0f, z * zscale, 0f);
+
+            // Draw top circle:
+            drawFlatCircle(0.5f, 0f, z * zscale, 0f);
         }
 
         private void drawPyramid(float x, float z, float y, float r)
         {
             GL.Begin(BeginMode.Triangles);
             GL.Normal3(-1f, 0f, 0f);
-            GL.Vertex3(x, z, y);
+            GL.Vertex3(x, z * zscale, y);
             GL.Vertex3(x - r, 0f, y - r);
             GL.Vertex3(x - r, 0f, y + r);
 
             GL.Normal3(0f, 0f, 1f);
-            GL.Vertex3(x, z, y);
+            GL.Vertex3(x, z * zscale, y);
             GL.Vertex3(x - r, 0f, y + r);
             GL.Vertex3(x + r, 0f, y + r);
 
             GL.Normal3(1f, 0f, 0f);
-            GL.Vertex3(x, z, y);
+            GL.Vertex3(x, z * zscale, y);
             GL.Vertex3(x + r, 0f, y + r);
             GL.Vertex3(x + r, 0f, y - r);
 
             GL.Normal3(0f, 0f, -1f);
-            GL.Vertex3(x, z, y);
+            GL.Vertex3(x, z * zscale, y);
             GL.Vertex3(x + r, 0f, y - r);
             GL.Vertex3(x - r, 0f, y - r);
             GL.End();
@@ -556,10 +571,10 @@ namespace SolsticeVisualizer
 
         private void drawPyramidSpikes(float w, float z, float h)
         {
-            drawPyramid(-0.25f, z * zscale, -0.25f, 0.25f);
-            drawPyramid(-0.25f, z * zscale, 0.25f, 0.25f);
-            drawPyramid(0.25f, z * zscale, 0.25f, 0.25f);
-            drawPyramid(0.25f, z * zscale, -0.25f, 0.25f);
+            drawPyramid(-0.25f, z, -0.25f, 0.25f);
+            drawPyramid(-0.25f, z, 0.25f, 0.25f);
+            drawPyramid(0.25f, z, 0.25f, 0.25f);
+            drawPyramid(0.25f, z, -0.25f, 0.25f);
         }
 
         private void drawTopHemisphere(float z, float r)
@@ -644,7 +659,7 @@ namespace SolsticeVisualizer
 
         #region Rendering specific game objects
 
-        private void drawBlockType(BlockCosmeticType ty, int x, int y, int z)
+        private void drawBlockType(BlockCosmeticType ty, int x, int y, int z, byte alpha)
         {
             GL.PushMatrix();
             GL.Translate(
@@ -655,53 +670,117 @@ namespace SolsticeVisualizer
             switch (ty)
             {
                 case BlockCosmeticType.Solid:
-                    setBGGLColor(room.Palette[2]);
+                    setBGGLColorAlpha(room.Palette[2], alpha);
                     drawOutlinedSolidCube(1f, 1f, 1f);
                     break;
+                case BlockCosmeticType.ConveyerEW:
+                    setBGGLColorAlpha(room.Palette[2], alpha);
+                    GL.Begin(BeginMode.QuadStrip);
+                    for (int i = 24; i >= 8; --i)
+                    {
+                        double angle = (i) * Math.PI / 16f;
+                        GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
+                        GL.Vertex3(-0.375f + 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.5f);
+                    }
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        GL.Normal3(0f, 1f, 0f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 1f * zscale, -0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 1f * zscale, 0.5f);
+                    }
+                    for (int i = 8; i <= 24; ++i)
+                    {
+                        double angle = (i) * Math.PI / 16f;
+                        GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
+                        GL.Vertex3(0.375f - 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.5f);
+                        GL.Vertex3(0.375f - 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.5f);
+                    }
+                    for (int i = 5; i >= 0; --i)
+                    {
+                        GL.Normal3(0f, -1f, 0f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 0f * zscale, -0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 0f * zscale, 0.5f);
+                    }
+                    GL.End();
+                    break;
+                case BlockCosmeticType.ConveyerNS:
+                    setBGGLColorAlpha(room.Palette[2], alpha);
+                    GL.Begin(BeginMode.QuadStrip);
+                    for (int i = 24; i >= 8; --i)
+                    {
+                        double angle = (i) * Math.PI / 16f;
+                        GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
+                        GL.Vertex3(-0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.375f + 0.125f * Math.Cos(angle));
+                        GL.Vertex3(0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.375f + 0.125f * Math.Cos(angle));
+                    }
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        GL.Normal3(0f, 1f, 0f);
+                        GL.Vertex3(-0.5f, 1f * zscale, -0.375f + 0.125f * i);
+                        GL.Vertex3(0.5f, 1f * zscale, -0.375f + 0.125f * i);
+                    }
+                    for (int i = 8; i <= 24; ++i)
+                    {
+                        double angle = (i) * Math.PI / 16f;
+                        GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
+                        GL.Vertex3(-0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.375f - 0.125f * Math.Cos(angle));
+                        GL.Vertex3(0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.375f - 0.125f * Math.Cos(angle));
+                    }
+                    for (int i = 5; i >= 0; --i)
+                    {
+                        GL.Normal3(0f, -1f, 0f);
+                        GL.Vertex3(-0.5f, 0f * zscale, -0.375f + 0.125f * i);
+                        GL.Vertex3(0.5f, 0f * zscale, -0.375f + 0.125f * i);
+                    }
+                    GL.End();
+                    break;
                 case BlockCosmeticType.StoneSlabHemisphereTopCap:
-                    setBGGLColor(room.Palette[2]);
+                    setBGGLColorAlpha(room.Palette[2], alpha);
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
                     setBGGLColor(room.Palette[0]);
                     drawTopHemisphere(0.25f, 0.333f);
                     break;
                 case BlockCosmeticType.StoneSlabHemisphereBottomCap:
-                    setBGGLColor(room.Palette[2]);
+                    setBGGLColorAlpha(room.Palette[2], alpha);
                     GL.PushMatrix();
                     GL.Translate(0f, 0.75f * zscale, 0f);
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
                     GL.PopMatrix();
-                    setBGGLColor(room.Palette[0]);
+
+                    setBGGLColorAlpha(room.Palette[0], alpha);
                     drawBottomHemisphere(0.75f, 0.333f);
                     break;
                 case BlockCosmeticType.SandwichBlock:
                     // Bottom solid part:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColorAlpha(room.Palette[0], alpha);
                     drawOutlinedSolidCube(1f, 0.4f, 1f);
 
                     // Middle creme filling:
-                    setBGGLColor(room.Palette[2]);
+                    setBGGLColorAlpha(room.Palette[2], alpha);
                     GL.PushMatrix();
                     GL.Translate(0f, 0.4f * zscale, 0f);
                     drawOutlinedSolidCube(1f, 0.2f, 1f);
                     GL.PopMatrix();
 
                     // Top solid part:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColorAlpha(room.Palette[0], alpha);
                     GL.PushMatrix();
                     GL.Translate(0f, 0.6f * zscale, 0f);
                     drawOutlinedSolidCube(1f, 0.4f, 1f);
                     GL.PopMatrix();
                     break;
                 case BlockCosmeticType.VerticalColumn:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColorAlpha(room.Palette[0], alpha);
                     drawVerticalColumn(1.0f, 0.8f, 1.0f);
                     break;
                 case BlockCosmeticType.TransparentOutlined:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColorAlpha(room.Palette[0], alpha);
                     drawOpenCube(0.95f, 0.9f, 0.95f);
                     break;
                 case BlockCosmeticType.RoundedStoneSlab:
-                    setBGGLColor(room.Palette[0]);
+                    // TODO: This is awful, fix this.
+                    setBGGLColorAlpha(room.Palette[0], alpha);
                     GL.PushMatrix();
                     GL.Translate(0f, 0.1f * zscale, 0f);
                     drawSolidCube(0.95f, 0.8f, 0.95f);
@@ -716,11 +795,24 @@ namespace SolsticeVisualizer
                     GL.PopMatrix();
                     break;
                 case BlockCosmeticType.PyramidSpikes:
-                    setBGGLColor(room.Palette[2]);
+                    setBGGLColorAlpha(room.Palette[2], alpha);
                     drawOutlinedPyramidSpikes(1.0f, 1.0f, 1.0f);
                     break;
+                case BlockCosmeticType.PyramidalColumnBottom:
+                    setBGGLColorAlpha(room.Palette[2], alpha);
+                    drawPyramid(0f, 1.5f, 0f, 0.5f);
+                    GL.PushMatrix();
+                    GL.Translate(0f, 1f * zscale, 0f);
+                    drawSolidCube(0.25f, 2f, 0.25f);
+                    GL.PopMatrix();
+                    break;
+                case BlockCosmeticType.PyramidalColumnTop:
+                    // TODO: fix this to be an inverted flange-like thing:
+                    setBGGLColorAlpha(room.Palette[0], alpha);
+                    drawPyramid(0f, 0.5f, 0f, 0.25f);
+                    break;
                 default:
-                    setBGGLColor(room.Palette[2]);
+                    setBGGLColorAlpha(room.Palette[2], alpha);
                     drawOpenCube(0.95f, 0.95f, 0.95f);
                     break;
             }
@@ -729,12 +821,17 @@ namespace SolsticeVisualizer
 
         private void drawStaticBlock(StaticBlock b)
         {
-            drawBlockType(b.CosmeticType, b.X, b.Y, b.Z);
+            drawBlockType(b.CosmeticType, b.X, b.Y, b.Z, (byte)255);
         }
 
         private void drawDynamicBlock(DynamicBlock b)
         {
-            drawBlockType(b.CosmeticType, b.X, b.Y, b.Z);
+            byte alpha = 255;
+            if (b.FunctionalType == BlockFunctionalType.AppearsWhenTouched)
+            {
+                alpha = 127;
+            }
+            drawBlockType(b.CosmeticType, b.X, b.Y, b.Z, alpha);
         }
 
         private void drawEntity(StaticEntity ent)
@@ -747,9 +844,21 @@ namespace SolsticeVisualizer
             );
             switch (ent.EntityType)
             {
+                case EntityType.SliderEW:
+                    setFGGLColor(ent.Color1);
+                    drawOutlinedSolidCube(0.5f, 0.25f, 0.5f);
+                    break;
                 case EntityType.TransparentCube:
                     setFGGLColor(ent.Color1);
                     drawOpenCube(0.5f, 1.0f, 0.5f);
+                    break;
+                case EntityType.Hemisphere:
+                    // Draw bottom hemisphere:
+                    setFGGLColor(ent.Color1);
+                    drawBottomHemisphere(0.5f, 0.25f);
+                    // Draw top circle:
+                    setFGGLColor(ent.Color2);
+                    drawFlatCircle(0.25f, 0f, 0.5f * zscale, 0f);
                     break;
                 case EntityType.MovingLift:
                     setFGGLColor(ent.Color1);
@@ -815,7 +924,7 @@ namespace SolsticeVisualizer
             // My lame, colorblind attempt at palette mapping:
             switch (pidx)
             {
-            // :)
+                // :)
                 case 19: return Color.Purple;
                 case 20: return Color.Magenta;
                 case 21: return Color.HotPink;
@@ -828,7 +937,7 @@ namespace SolsticeVisualizer
                 case 40: return Color.Goldenrod;
                 case 44: return Color.SeaGreen;
 
-            // :(
+                // :(
                 case 6: return Color.DarkRed;
                 case 7: return Color.Crimson;
                 case 17: return Color.SkyBlue;
@@ -853,7 +962,7 @@ namespace SolsticeVisualizer
             // My lame, colorblind attempt at palette mapping:
             switch (pidx)
             {
-            // :)
+                // :)
                 case 4: return Color.DarkMagenta;
                 case 7: return Color.FromArgb(0x74, 0x54, 0x20);
                 case 9: return Color.FromArgb(0, 0x10, 0);
@@ -889,13 +998,25 @@ namespace SolsticeVisualizer
         private void setFGGLColor(int pidx)
         {
             Color clr = getColorByFGPalette(pidx);
-            GL.Color3(clr.R, clr.G, clr.B);
+            GL.Color4(clr.R, clr.G, clr.B, (byte)255);
+        }
+
+        private void setFGGLColorAlpha(int pidx, byte alpha)
+        {
+            Color clr = getColorByFGPalette(pidx);
+            GL.Color4(clr.R, clr.G, clr.B, alpha);
         }
 
         private void setBGGLColor(int pidx)
         {
             Color clr = getColorByBGPalette(pidx);
-            GL.Color3(clr.R, clr.G, clr.B);
+            GL.Color4(clr.R, clr.G, clr.B, (byte)255);
+        }
+
+        private void setBGGLColorAlpha(int pidx, byte alpha)
+        {
+            Color clr = getColorByBGPalette(pidx);
+            GL.Color4(clr.R, clr.G, clr.B, alpha);
         }
 
         #endregion
@@ -906,25 +1027,29 @@ namespace SolsticeVisualizer
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            Matrix4 lookat = Matrix4.LookAt(8, 6, 8, 0, 1, 0, 0, 1, 0);
+            Matrix4 lookat = Matrix4.LookAt(7, 5, 7, 1, 1, 1, 0, 1, 0);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadMatrix(ref lookat);
 
             // Auto-rotate the room about the Y axis:
             angle += rotation_speed * (float)e.Time;
-            GL.Rotate(Math.Cos(angle * Math.PI / 180.0f) * 5f, 0.0f, 1.0f, 0.0f);
+            GL.Rotate(5f + Math.Cos(angle * Math.PI / 180.0f) * 15f, 0.0f, 1.0f, 0.0f);
             //GL.Rotate(angle, 0.0f, 1.0f, 0.0f);
 
+#if false
             // Draw the wall outline:
             GL.Color3(0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
             GL.Translate(-0.01f, -0.01f, -0.01f);
             drawOpenCube(room.Width + 0.02f, 8.0f + 0.02f, room.Height + 0.02f);
             GL.PopMatrix();
+#endif
+
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             // Draw exits on the walls:
             GL.Color3(0.4f, 0.4f, 0.95f);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+#if false
             if (room.HasExitNW)
             {
                 GL.PushMatrix();
@@ -939,6 +1064,7 @@ namespace SolsticeVisualizer
                 drawFrontWall(0.99f, 3.99f);
                 GL.PopMatrix();
             }
+#endif
             if (room.HasExitSE)
             {
                 GL.PushMatrix();
@@ -950,35 +1076,109 @@ namespace SolsticeVisualizer
             {
                 GL.PushMatrix();
                 GL.Translate((room.ExitSW.W + 1) - rmHalfWidth + 0.5f, room.ExitSW.Z * zscale + 0.01f, rmHalfHeight);
-                drawFrontWall(0.99f, 3.99f);
+                drawBackWall(0.99f, 3.99f);
                 GL.PopMatrix();
             }
 
             // Draw windows on the walls:
-            if (room.WindowMaskNW > 0)
+
+            // Northwest wall:
             {
                 setBGGLColor(room.Palette[1]);
                 for (int i = 0; i < room.Height; ++i)
                 {
-                    if ((room.WindowMaskNW & (1 << (7 - i))) == 0) continue;
+                    bool isExitRow = room.HasExitNW && (room.ExitNW.W == (i - 1));
+                    bool hasWindow = (room.WindowMaskNW & (1 << (7 - i))) != 0;
+                    if (isExitRow)
+                    {
+                        // Draw the exit above the rest of the wall:
+                        GL.PushMatrix();
+                        GL.Translate(-rmHalfWidth, room.ExitNW.Z * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                        drawLeftWall(3.99f, 1f);
+                        GL.PopMatrix();
 
-                    GL.PushMatrix();
-                    GL.Translate(0 - rmHalfWidth, 4 * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                    drawLeftWall(1.99f, 0.99f);
-                    GL.PopMatrix();
+                        if (room.ExitNW.Z > 0)
+                        {
+                            // Draw lower part:
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                            GL.PushMatrix();
+                            GL.Translate(-rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                            drawLeftWall(room.ExitNW.Z - 0.01f, 1f);
+                            GL.PopMatrix();
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                        }
+                        float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNW.Z + 4f));
+                        if (z2 > 0)
+                        {
+                            // Draw upper part:
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                            GL.PushMatrix();
+                            GL.Translate(-rmHalfWidth, (room.ExitNW.Z + 4f) * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                            drawLeftWall(z2 - 0.01f, 1f);
+                            GL.PopMatrix();
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                        }
+                    }
+                    else
+                    {
+                        // Just a wall or not:
+                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                        GL.PushMatrix();
+                        GL.Translate(0 - rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                        drawLeftWall(hasWindow ? 3.99f : 7.99f, 1f);
+                        GL.PopMatrix();
+                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                    }
                 }
             }
-            if (room.WindowMaskNE > 0)
+
+            // Northeast wall:
             {
                 setBGGLColor(room.Palette[1]);
                 for (int i = 0; i < room.Width; ++i)
                 {
-                    if ((room.WindowMaskNE & (1 << (7 - i))) == 0) continue;
+                    bool isExitRow = room.HasExitNE && (room.ExitNE.W == room.Width - (i + 2));
+                    bool hasWindow = (room.WindowMaskNE & (1 << (7 - i))) != 0;
+                    if (isExitRow)
+                    {
+                        // Draw the exit above the rest of the wall:
+                        GL.PushMatrix();
+                        GL.Translate(rmHalfWidth - (i + 1) + 0.5f, room.ExitNE.Z * zscale + 0.01f, 0 - rmHalfHeight);
+                        drawFrontWall(1f, 3.99f);
+                        GL.PopMatrix();
 
-                    GL.PushMatrix();
-                    GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 4 * zscale + 0.01f, 0 - rmHalfHeight);
-                    drawFrontWall(0.99f, 1.99f);
-                    GL.PopMatrix();
+                        if (room.ExitNE.Z > 0)
+                        {
+                            // Draw lower part:
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                            GL.PushMatrix();
+                            GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
+                            drawFrontWall(1f, room.ExitNE.Z - 0.01f);
+                            GL.PopMatrix();
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                        }
+                        float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNE.Z + 4f));
+                        if (z2 > 0)
+                        {
+                            // Draw upper part:
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                            GL.PushMatrix();
+                            GL.Translate(rmHalfWidth - (i + 1) + 0.5f, (room.ExitNE.Z + 4f) * zscale + 0.01f, 0 - rmHalfHeight);
+                            drawFrontWall(1f, z2 - 0.01f);
+                            GL.PopMatrix();
+                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                        }
+                    }
+                    else
+                    {
+                        // Just a window or not:
+                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                        GL.PushMatrix();
+                        GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
+                        drawFrontWall(1f, hasWindow ? 3.99f : 7.99f);
+                        GL.PopMatrix();
+                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                    }
                 }
             }
             // Enable fill mode again:
@@ -991,7 +1191,7 @@ namespace SolsticeVisualizer
                     {
                         drawFloor(room.Floor1Cosmetic, c, r);
                     }
-                    else if (room.Floor2Behavior != 0)
+                    else// if (room.Floor2Behavior != room.Floor1Behavior)
                     {
                         drawFloor(room.Floor2Cosmetic, c, r);
                     }

@@ -17,7 +17,7 @@ namespace SolsticeVisualizer
         Unknown7 = 7,
         SmallTiles = 8,
         BedOfSpikes2 = 9,
-        Unknown10 = 10,
+        Empty = 10,
         Unknown11 = 11,
         Unknown12 = 12,
         Unknown13 = 13,

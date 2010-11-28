@@ -11,8 +11,11 @@ namespace SolsticeVisualizer
         VerticalColumn = 1,
         RoundedStoneSlab = 2,
         ConveyerEW = 3,
+        ConveyerNS = 4,
+        TransparentOutlined = 5,
         SandwichBlock = 6,
-        StoneSlabHemisphereCap = 8,
+        StoneSlabHemisphereTopCap = 8,
+        StoneSlabHemisphereBottomCap = 9,
         PyramidSpikes = 10,
         TeleporterTop = 15,
         TeleporterPad = 16

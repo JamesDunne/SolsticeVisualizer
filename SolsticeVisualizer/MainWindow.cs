@@ -664,13 +664,15 @@ namespace SolsticeVisualizer
 
         private void drawBlockType(BlockCosmeticType ty, int x, int y, int z, byte alpha)
         {
+            const float epsilon = 0.01f;
             GL.PushMatrix();
             GL.Translate(
                 (x - rmHalfWidth + 0.5f),
                 (z * zscale),
                 (y - rmHalfHeight + 0.5f)
             );
-            GL.Scale(1f - 0.01f, 1f - (0.01f / zscale), 1f - 0.01f);
+            GL.Scale(1f - epsilon, 1f - (epsilon / zscale), 1f - epsilon);
+            //GL.Translate(0f, (epsilon / (zscale * 2f)), 0f);
             switch (ty)
             {
                 case BlockCosmeticType.Solid:
@@ -799,7 +801,7 @@ namespace SolsticeVisualizer
                     break;
                 case BlockCosmeticType.TransparentOutlined:
                     setBGGLColorAlpha(room.Palette[0], alpha);
-                    drawOpenCube(0.95f, 0.9f, 0.95f);
+                    drawOpenCube(0.975f, 0.975f, 0.975f);
                     break;
                 case BlockCosmeticType.RoundedStoneSlab:
                     // TODO: This is awful, fix this.
@@ -836,7 +838,7 @@ namespace SolsticeVisualizer
                     break;
                 default:
                     setBGGLColorAlpha(room.Palette[2], alpha);
-                    drawOpenCube(0.95f, 0.95f, 0.95f);
+                    drawOpenCube(0.975f, 0.975f, 0.975f);
                     break;
             }
             GL.PopMatrix();

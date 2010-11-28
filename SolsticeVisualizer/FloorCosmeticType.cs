@@ -7,16 +7,16 @@ namespace SolsticeVisualizer
 {
     public enum FloorCosmeticType : byte
     {
-        Unknown0 = 0,
-        Unknown1 = 1,
+        Stone = 0,
+        BedOfSpikes = 1,
         Unknown2 = 2,
-        Unknown3 = 3,
+        ForestDirt = 3,
         Unknown4 = 4,
         Unknown5 = 5,
-        Unknown6 = 6,
+        Gravel = 6,
         Unknown7 = 7,
         SmallTiles = 8,
-        Unknown9 = 9,
+        BedOfSpikes2 = 9,
         Unknown10 = 10,
         Unknown11 = 11,
         Unknown12 = 12,

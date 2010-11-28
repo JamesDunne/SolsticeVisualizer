@@ -50,6 +50,7 @@
     <Compile Include="BlockCosmeticType.cs" />
     <Compile Include="BlockFunctionalType.cs" />
     <Compile Include="DynamicBlock.cs" />
+    <Compile Include="EntityType.cs" />
     <Compile Include="FloorCosmeticType.cs" />
     <Compile Include="StaticBlock.cs" />
     <Compile Include="GameData.cs" />

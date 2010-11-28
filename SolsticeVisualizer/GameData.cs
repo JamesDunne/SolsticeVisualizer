@@ -171,7 +171,7 @@ namespace SolsticeVisualizer
             using (var ms = new MemoryStream(RawImage, RoomIndicies[roomNumber], 1024))
             using (var br = new BinaryReader(ms))
             {
-                byte[] dummy;
+                byte[] k;
 
                 Room rm = new Room();
 
@@ -191,11 +191,11 @@ namespace SolsticeVisualizer
                 rm.Entities = new StaticEntity[entityCount];
                 if (entityCount > 0)
                 {
-                    dummy = new byte[5];
+                    k = new byte[5];
                     for (int i = 0; i < entityCount; ++i)
                     {
-                        br.Read(dummy, 0, 5);
-                        rm.Entities[i] = new StaticEntity(dummy[0], dummy[1] & 15, dummy[1] >> 4, dummy[2], dummy[3], dummy[4]);
+                        br.Read(k, 0, 5);
+                        rm.Entities[i] = new StaticEntity((EntityType)k[0], k[1] & 15, k[1] >> 4, k[2] & 15, k[2] >> 4, k[3], k[4]);
                     }
                 }
 
@@ -215,20 +215,20 @@ namespace SolsticeVisualizer
                 rm.Floor2Cosmetic = (FloorCosmeticType)(flr & 15);
 
                 // Floor visibility mask:
-                dummy = new byte[7];
-                br.Read(dummy, 0, 7);
+                k = new byte[7];
+                br.Read(k, 0, 7);
 
                 // Fill out floor visibility 2D array:
                 rm.FloorVisible = new bool[rm.Height, rm.Width];
                 for (int r = 0; r < rm.Height; ++r)
                     for (int c = 0; c < rm.Width; ++c)
-                        rm.FloorVisible[r, c] = (dummy[r] & (1 << c)) != 0;
+                        rm.FloorVisible[r, c] = (k[r] & (1 << c)) != 0;
 
                 // Exits:
                 byte exitMask = br.ReadByte();
 
-                rm.HasExitCeiling = (exitMask & (1 << 5)) != 0;
-                rm.HasExitFloor = (exitMask & (1 << 4)) != 0;
+                rm.HasExitFloor = (exitMask & (1 << 5)) != 0;
+                rm.HasExitCeiling = (exitMask & (1 << 4)) != 0;
                 rm.HasExitNW = (exitMask & (1 << 3)) != 0;
                 rm.HasExitNE = (exitMask & (1 << 2)) != 0;
                 rm.HasExitSE = (exitMask & (1 << 1)) != 0;
@@ -239,17 +239,17 @@ namespace SolsticeVisualizer
 
                 // Ceiling and floor exits:
 
-                if (rm.HasExitCeiling)
-                {
-                    roomDest = br.ReadByte();
-                    position = br.ReadByte();
-                    rm.ExitCeiling = new RoomExit(roomDest, 0, 0);
-                }
                 if (rm.HasExitFloor)
                 {
                     roomDest = br.ReadByte();
                     position = br.ReadByte();
                     rm.ExitFloor = new RoomExit(roomDest, 0, 0);
+                }
+                if (rm.HasExitCeiling)
+                {
+                    roomDest = br.ReadByte();
+                    position = br.ReadByte();
+                    rm.ExitCeiling = new RoomExit(roomDest, 0, 0);
                 }
 
                 // Position and roomDest bytes are in opposite order for walls:
@@ -286,13 +286,13 @@ namespace SolsticeVisualizer
                 rm.StaticBlocks = new StaticBlock[blockCount];
                 if (blockCount > 0)
                 {
-                    dummy = new byte[4];
+                    k = new byte[4];
                     byte[] extra = new byte[12];
                     for (int i = 0; i < blockCount; ++i)
                     {
-                        br.Read(dummy, 0, 4);
-                        rm.StaticBlocks[i] = new StaticBlock((BlockCosmeticType)dummy[0], dummy[1] & 15, dummy[1] >> 4, dummy[2]);
-                        if (dummy[3] == 0x00)
+                        br.Read(k, 0, 4);
+                        rm.StaticBlocks[i] = new StaticBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2]);
+                        if (k[3] == 0x00)
                         {
                             br.Read(extra, 0, 12);
                         }
@@ -304,20 +304,20 @@ namespace SolsticeVisualizer
                 rm.DynamicBlocks = new DynamicBlock[blockCount];
                 if (blockCount > 0)
                 {
-                    dummy = new byte[4];
+                    k = new byte[4];
                     byte[] extra = new byte[36];
                     for (int i = 0; i < blockCount; ++i)
                     {
-                        br.Read(dummy, 0, 4);
-                        rm.DynamicBlocks[i] = new DynamicBlock((BlockCosmeticType)dummy[0], dummy[1] & 15, dummy[1] >> 4, dummy[2], (BlockFunctionalType)dummy[3]);
+                        br.Read(k, 0, 4);
+                        rm.DynamicBlocks[i] = new DynamicBlock((BlockCosmeticType)k[0], k[1] & 15, k[1] >> 4, k[2], (BlockFunctionalType)k[3]);
 
-                        if (dummy[3] == 4)
+                        if (k[3] == 4)
                         {
                             br.Read(extra, 0, 36);
                         }
-                        else if (dummy[3] == 7)
+                        else if (k[3] == 7)
                         {
-                            // Teleport launch?
+                            // Teleportor pad:
                             br.Read(extra, 0, 12);
                         }
                         else

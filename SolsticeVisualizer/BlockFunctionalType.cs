@@ -7,5 +7,8 @@ namespace SolsticeVisualizer
 {
     public enum BlockFunctionalType : byte
     {
+        ConveyerEW = 0,
+        AppearsWhenTouched = 5,
+        Teleport = 7
     }
 }

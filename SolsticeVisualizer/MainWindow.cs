@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -16,8 +15,8 @@ namespace SolsticeVisualizer
 {
     class MainWindow : GameWindow
     {
-        //const int firstRoom = 0;
-        const int firstRoom = 248;
+        const int firstRoom = 0;
+        //const int firstRoom = 248;
         //const int firstRoom = 42;
         //const int firstRoom = 192;          // room with special static block
         //const int firstRoom = 36;         // top hemispheres
@@ -83,7 +82,8 @@ namespace SolsticeVisualizer
             GL.Enable(EnableCap.LineSmooth);			// Enable Anti-Aliasing
 
             // Process command-line args:
-            Queue<string> args = new Queue<string>(Environment.GetCommandLineArgs().Skip(1));
+            Queue<string> args = new Queue<string>(Environment.GetCommandLineArgs());
+            args.Dequeue();
             string path = @"Solstice (U).nes";
             if (args.Count >= 1)
             {
@@ -496,9 +496,9 @@ namespace SolsticeVisualizer
             for (int i = 0; i <= 16; ++i)
             {
                 double ang = ((double)i - 0.5d) * Math.PI / 8.0f;
-                circleNormal(i, 0.5f, 0f, 0, 0f);
-                circleVertex(i, 0.5f, x, 0, y);
-                circleVertex(i, 0.5f, x, z, y);
+                circleNormal(i, r, 0f, 0, 0f);
+                circleVertex(i, r, x, 0, y);
+                circleVertex(i, r, x, z, y);
             }
             GL.End();
         }
@@ -680,27 +680,27 @@ namespace SolsticeVisualizer
                     {
                         double angle = (i) * Math.PI / 16f;
                         GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
-                        GL.Vertex3(-0.375f + 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.5f);
-                        GL.Vertex3(-0.375f + 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.495f) * zscale, -0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.495f) * zscale, 0.5f);
                     }
                     for (int i = 0; i < 6; ++i)
                     {
                         GL.Normal3(0f, 1f, 0f);
-                        GL.Vertex3(-0.375f + 0.125f * i, 1f * zscale, -0.5f);
-                        GL.Vertex3(-0.375f + 0.125f * i, 1f * zscale, 0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 0.99f * zscale, -0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 0.99f * zscale, 0.5f);
                     }
                     for (int i = 8; i <= 24; ++i)
                     {
                         double angle = (i) * Math.PI / 16f;
                         GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
-                        GL.Vertex3(0.375f - 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.5f);
-                        GL.Vertex3(0.375f - 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.5f);
+                        GL.Vertex3(0.375f - 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.495f) * zscale, -0.5f);
+                        GL.Vertex3(0.375f - 0.125f * Math.Cos(angle), (0.5f + Math.Sin(angle) * 0.495f) * zscale, 0.5f);
                     }
                     for (int i = 5; i >= 0; --i)
                     {
                         GL.Normal3(0f, -1f, 0f);
-                        GL.Vertex3(-0.375f + 0.125f * i, 0f * zscale, -0.5f);
-                        GL.Vertex3(-0.375f + 0.125f * i, 0f * zscale, 0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 0.01f * zscale, -0.5f);
+                        GL.Vertex3(-0.375f + 0.125f * i, 0.01f * zscale, 0.5f);
                     }
                     GL.End();
                     break;
@@ -711,27 +711,27 @@ namespace SolsticeVisualizer
                     {
                         double angle = (i) * Math.PI / 16f;
                         GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
-                        GL.Vertex3(-0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.375f + 0.125f * Math.Cos(angle));
-                        GL.Vertex3(0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, -0.375f + 0.125f * Math.Cos(angle));
+                        GL.Vertex3(-0.5f, (0.5f + Math.Sin(angle) * 0.495f) * zscale, -0.375f + 0.125f * Math.Cos(angle));
+                        GL.Vertex3(0.5f, (0.5f + Math.Sin(angle) * 0.495f) * zscale, -0.375f + 0.125f * Math.Cos(angle));
                     }
                     for (int i = 0; i < 6; ++i)
                     {
                         GL.Normal3(0f, 1f, 0f);
-                        GL.Vertex3(-0.5f, 1f * zscale, -0.375f + 0.125f * i);
-                        GL.Vertex3(0.5f, 1f * zscale, -0.375f + 0.125f * i);
+                        GL.Vertex3(-0.5f, 0.99f * zscale, -0.375f + 0.125f * i);
+                        GL.Vertex3(0.5f, 0.99f * zscale, -0.375f + 0.125f * i);
                     }
                     for (int i = 8; i <= 24; ++i)
                     {
                         double angle = (i) * Math.PI / 16f;
                         GL.Normal3(Math.Cos(angle), Math.Sin(angle), 0f);
-                        GL.Vertex3(-0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.375f - 0.125f * Math.Cos(angle));
-                        GL.Vertex3(0.5f, (0.5f + Math.Sin(angle) * 0.5f) * zscale, 0.375f - 0.125f * Math.Cos(angle));
+                        GL.Vertex3(-0.5f, (0.5f + Math.Sin(angle) * 0.495f) * zscale, 0.375f - 0.125f * Math.Cos(angle));
+                        GL.Vertex3(0.5f, (0.5f + Math.Sin(angle) * 0.495f) * zscale, 0.375f - 0.125f * Math.Cos(angle));
                     }
                     for (int i = 5; i >= 0; --i)
                     {
                         GL.Normal3(0f, -1f, 0f);
-                        GL.Vertex3(-0.5f, 0f * zscale, -0.375f + 0.125f * i);
-                        GL.Vertex3(0.5f, 0f * zscale, -0.375f + 0.125f * i);
+                        GL.Vertex3(-0.5f, 0.01f * zscale, -0.375f + 0.125f * i);
+                        GL.Vertex3(0.5f, 0.01f * zscale, -0.375f + 0.125f * i);
                     }
                     GL.End();
                     break;
@@ -740,6 +740,25 @@ namespace SolsticeVisualizer
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
                     setBGGLColor(room.Palette[0]);
                     drawTopHemisphere(0.25f, 0.333f);
+                    break;
+                case BlockCosmeticType.TeleporterPad:
+                    setBGGLColorAlpha(room.Palette[2], alpha);
+                    drawOutlinedSolidCube(0.75f, 0.375f, 0.75f);
+                    setBGGLColor(room.Palette[0]);
+
+                    GL.PushMatrix();
+                    GL.Translate(0f, 0.375f * zscale, 0f);
+                    drawVerticalCylinder(0.3f, 0f, 0.125f * zscale, 0f);
+                    GL.PopMatrix();
+
+                    drawFlatCircle(0.3f, 0f, (0.375f + 0.126f) * zscale, 0f);
+                    break;
+                case BlockCosmeticType.TeleporterTop:
+                    setBGGLColorAlpha(room.Palette[2], alpha);
+                    GL.PushMatrix();
+                    GL.Translate(0f, 0.625f, 0f);
+                    drawOutlinedSolidCube(0.75f, 0.375f, 0.75f);
+                    GL.PopMatrix();
                     break;
                 case BlockCosmeticType.StoneSlabHemisphereBottomCap:
                     setBGGLColorAlpha(room.Palette[2], alpha);

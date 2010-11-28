@@ -222,7 +222,7 @@ namespace SolsticeVisualizer
                 rm.FloorVisible = new bool[rm.Height, rm.Width];
                 for (int r = 0; r < rm.Height; ++r)
                     for (int c = 0; c < rm.Width; ++c)
-                        rm.FloorVisible[r, c] = (k[r] & (1 << c)) != 0;
+                        rm.FloorVisible[r, c] = (k[c] & (1 << r)) != 0;
 
                 // Exits:
                 byte exitMask = br.ReadByte();

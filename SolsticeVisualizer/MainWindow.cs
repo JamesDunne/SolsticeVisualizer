@@ -20,8 +20,8 @@ namespace SolsticeVisualizer
         //const int firstRoom = 166;  // cylinders
         //const int firstRoom = 37;   // pyramid spikes
         //const int firstRoom = 76;       // rounded stones and transparent boxes
-        const int firstRoom = 82;       // sandwich blocks and crystal ball
-        //const int firstRoom = 198;
+        //const int firstRoom = 82;       // sandwich blocks and crystal ball
+        const int firstRoom = 237;
 
         const float rotation_speed = 15.0f;
         float angle;
@@ -538,8 +538,6 @@ namespace SolsticeVisualizer
         {
             const int slices = 16;
 
-            GL.Color4(1f, 1f, 1f, 1f);
-
             // Draw top of sphere as a triangle fan around the top-most point.
             GL.Begin(BeginMode.TriangleFan);
             GL.Vertex3(0f, (z + r) * zscale, 0f);
@@ -578,8 +576,6 @@ namespace SolsticeVisualizer
         private void drawBottomHemisphere(float z, float r)
         {
             const int slices = 16;
-
-            GL.Color4(1f, 1f, 1f, 1f);
 
             // Draw top of sphere as a triangle fan around the top-most point.
             GL.Begin(BeginMode.TriangleFan);
@@ -631,20 +627,22 @@ namespace SolsticeVisualizer
             switch (ty)
             {
                 case BlockCosmeticType.Solid:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[2]);
                     drawOutlinedSolidCube(1f, 1f, 1f);
                     break;
                 case BlockCosmeticType.StoneSlabHemisphereTopCap:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[2]);
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
+                    setBGGLColor(room.Palette[0]);
                     drawTopHemisphere(0.25f, 0.5f);
                     break;
                 case BlockCosmeticType.StoneSlabHemisphereBottomCap:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[2]);
                     GL.PushMatrix();
                     GL.Translate(0f, 0.75f * zscale, 0f);
                     drawOutlinedSolidCube(1f, 0.25f, 1f);
                     GL.PopMatrix();
+                    setBGGLColor(room.Palette[0]);
                     drawBottomHemisphere(0.75f, 0.5f);
                     break;
                 case BlockCosmeticType.SandwichBlock:
@@ -676,16 +674,25 @@ namespace SolsticeVisualizer
                     break;
                 case BlockCosmeticType.RoundedStoneSlab:
                     setBGGLColor(room.Palette[0]);
+                    GL.PushMatrix();
+                    GL.Translate(0f, 0.1f * zscale, 0f);
                     drawSolidCube(0.95f, 0.8f, 0.95f);
+                    GL.PopMatrix();
+                    GL.PushMatrix();
+                    GL.Translate(0f, 0.05f * zscale, 0f);
                     drawSolidCube(0.9f, 0.9f, 0.9f);
+                    GL.PopMatrix();
+                    GL.PushMatrix();
+                    GL.Translate(0f, 0.05f * zscale, 0f);
                     drawSolidCube(0.85f, 0.95f, 0.85f);
+                    GL.PopMatrix();
                     break;
                 case BlockCosmeticType.PyramidSpikes:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[2]);
                     drawOutlinedPyramidSpikes(1.0f, 1.0f, 1.0f);
                     break;
                 default:
-                    setBGGLColor(room.Palette[1]);
+                    setBGGLColor(room.Palette[2]);
                     drawOpenCube(0.95f, 0.95f, 0.95f);
                     break;
             }
@@ -737,44 +744,63 @@ namespace SolsticeVisualizer
         {
             GL.PushMatrix();
             GL.Translate(c - rmHalfWidth + 0.5f, 0.0f, r - rmHalfHeight + 0.5f);
+            //GL.Translate(rmHalfWidth - c + 0.5f, 0.0f, rmHalfHeight - r + 0.5f);
             switch (floorCosmeticType)
             {
                 case FloorCosmeticType.Stone:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[1]);
                     drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f);
                     break;
                 case FloorCosmeticType.BedOfSpikes2:
                 case FloorCosmeticType.BedOfSpikes:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[2]);
                     drawBedOfSpikes();
                     break;
                 case FloorCosmeticType.SmallTiles:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[1]);
                     drawOutlinedSmallTiles(1.0f, 0.0f, 1.0f);
                     break;
                 case FloorCosmeticType.Empty:
                     break;
+                case FloorCosmeticType.ForestDirt:
+                case FloorCosmeticType.Gravel:
+                    setBGGLColor(room.Palette[1]);
+                    drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f);
+                    break;
                 default:
-                    setBGGLColor(room.Palette[0]);
+                    setBGGLColor(room.Palette[1]);
                     drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f);
                     break;
             }
             GL.PopMatrix();
         }
 
+        #endregion
+
+        #region Palette mapping
+
         private Color getColorByFGPalette(int pidx)
         {
             switch (pidx)
             {
+            // :)
+                case 19: return Color.Purple;
+                case 20: return Color.Magenta;
+                case 21: return Color.HotPink;
+                case 22: return Color.Red;
+                case 23: return Color.SandyBrown;
+                case 24: return Color.DarkOrange;
+                case 25: return Color.DarkGoldenrod;
+                case 37: return Color.HotPink;
+                case 39: return Color.Honeydew;
+                case 40: return Color.Goldenrod;
+                case 44: return Color.SeaGreen;
+
+            // :(
                 case 6: return Color.DarkRed;
                 case 7: return Color.Crimson;
                 case 17: return Color.SkyBlue;
                 case 18: return Color.MidnightBlue;
-                case 19: return Color.Purple;
-                case 20: return Color.Magenta;
-                case 21: return Color.Pink;
-                case 23: return Color.Red;
-                case 24: return Color.DarkGreen;
                 case 26: return Color.LimeGreen;
                 case 27: return Color.ForestGreen;
                 case 28: return Color.Blue;
@@ -782,10 +808,7 @@ namespace SolsticeVisualizer
                 case 35: return Color.DarkGoldenrod;
                 case 36: return Color.Magenta;
                 case 38: return Color.Salmon;
-                case 39: return Color.SandyBrown;
-                case 40: return Color.DarkGreen;
                 case 43: return Color.LightGreen;
-                case 44: return Color.DarkBlue;
                 default: return Color.Silver;
             }
         }
@@ -795,29 +818,34 @@ namespace SolsticeVisualizer
             switch (pidx)
             {
             // :)
-                case 33: return Color.LightBlue;
-                case 49: return Color.Silver;
+                case 4: return Color.DarkMagenta;
+                case 7: return Color.FromArgb(0x74, 0x54, 0x20);
+                case 9: return Color.FromArgb(0, 0x10, 0);
+                case 10: return Color.FromArgb(0, 0x24, 0);
+                case 11: return Color.FromArgb(0x0D, 0x35, 0x2A);
+                case 12: return Color.FromArgb(0x0D, 0x22, 0x35);
+                case 17: return Color.FromArgb(0x33, 0x55, 0xBB);
+                case 18: return Color.FromArgb(0x33, 0x33, 0xCC);
+                case 19: return Color.FromArgb(0x44, 0x44, 0xDD);
 
-            // :(
-                case 6: return Color.DarkRed;
-                case 7: return Color.Crimson;
-                case 17: return Color.SkyBlue;
-                case 18: return Color.MidnightBlue;
-                case 19: return Color.Purple;
                 case 20: return Color.Magenta;
-                case 21: return Color.Pink;
-                case 23: return Color.Red;
-                case 24: return Color.DarkGreen;
-                case 26: return Color.LimeGreen;
-                case 27: return Color.ForestGreen;
-                case 28: return Color.Blue;
-                case 35: return Color.DarkGoldenrod;
+                case 23: return Color.FromArgb(0xC4, 0xA4, 0x50);
+                case 24: return Color.YellowGreen;
+                case 25: return Color.FromArgb(0x12, 0x42, 0);
+                case 26: return Color.FromArgb(0x32, 0x9A, 0x22);
+                case 27: return Color.FromArgb(0x0D, 0x55, 0x4A);
+                case 28: return Color.FromArgb(0x0D, 0x55, 0x6A);
+                case 33: return Color.CornflowerBlue;
+                case 34: return Color.FromArgb(0x8D, 0xCC, 0xF0);
+                case 35: return Color.FromArgb(0x7C, 0xDC, 0xFF);
                 case 36: return Color.Magenta;
-                case 38: return Color.Salmon;
-                case 39: return Color.SandyBrown;
-                case 40: return Color.DarkGreen;
-                case 43: return Color.LightGreen;
-                case 44: return Color.DarkBlue;
+
+                case 39: return Color.FromArgb(0xC4, 0xA4, 0x50);
+                case 41: return Color.FromArgb(0x9A, 0xAA, 0x35);
+                case 42: return Color.FromArgb(0x3A, 0x90, 0x28);
+                case 43: return Color.LightGoldenrodYellow;
+                case 49: return Color.LightGray;
+
                 default: return Color.Silver;
             }
         }
@@ -951,7 +979,6 @@ namespace SolsticeVisualizer
             {
                 StaticEntity ent = room.Entities[i];
 
-                setFGGLColor(ent.Color1);
                 drawEntity(ent);
             }
 

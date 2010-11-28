@@ -10,18 +10,19 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Platform;
 using System.Drawing;
+using System.IO;
 
 namespace SolsticeVisualizer
 {
     class MainWindow : GameWindow
     {
-        //const int firstRoom = 0;
-        //const int firstRoom = 36;   // top hemispheres
-        //const int firstRoom = 166;  // cylinders
-        //const int firstRoom = 37;   // pyramid spikes
-        //const int firstRoom = 76;       // rounded stones and transparent boxes
-        //const int firstRoom = 82;       // sandwich blocks and crystal ball
-        const int firstRoom = 243;
+        const int firstRoom = 0;
+        //const int firstRoom = 36;         // top hemispheres
+        //const int firstRoom = 166;        // cylinders
+        //const int firstRoom = 37;         // pyramid spikes
+        //const int firstRoom = 76;         // rounded stones and transparent boxes
+        //const int firstRoom = 82;         // sandwich blocks and crystal ball
+        //const int firstRoom = 243;        // last room
 
         const float rotation_speed = 15.0f;
         float angle;
@@ -80,16 +81,23 @@ namespace SolsticeVisualizer
 
             // Process command-line args:
             Queue<string> args = new Queue<string>(Environment.GetCommandLineArgs().Skip(1));
+            string path = @"Solstice (U).nes";
             if (args.Count >= 1)
             {
-                string path = args.Dequeue();
+                path = args.Dequeue();
                 gameData = GameData.LoadFromRom(path);
             }
 
             if (gameData == null)
-                gameData = GameData.LoadFromRom(@"Solstice (U).nes");
+            {
+                path = @"Solstice (U).nes";
+                gameData = GameData.LoadFromRom(path);
+            }
             if (gameData == null)
-                gameData = GameData.LoadFromRom(@"..\..\Solstice (U).nes");
+            {
+                path = @"..\..\Solstice (U).nes";
+                gameData = GameData.LoadFromRom(path);
+            }
 
             if (gameData == null)
             {
@@ -97,10 +105,30 @@ namespace SolsticeVisualizer
                 this.Exit();
             }
 
+            // Load the palette:
+            string palPath = path;
+            if (palPath.EndsWith(".nes", StringComparison.OrdinalIgnoreCase))
+            {
+                palPath = palPath.Substring(0, palPath.Length - 4) + ".pal";
+                LoadPalette(palPath);
+            }
+
             // Load the first room:
             loadRoom(firstRoom);
 
             Keyboard.KeyDown += new EventHandler<OpenTK.Input.KeyboardKeyEventArgs>(Keyboard_KeyDown);
+        }
+
+        Color[] palette = null;
+
+        private void LoadPalette(string path)
+        {
+            palette = new Color[64];
+            byte[] raw = File.ReadAllBytes(path);
+            for (int i = 0; i < 64; ++i)
+            {
+                palette[i] = Color.FromArgb(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]);
+            }
         }
 
         private void loadRoom(int roomNumber)
@@ -781,6 +809,10 @@ namespace SolsticeVisualizer
 
         private Color getColorByFGPalette(int pidx)
         {
+            // Uses NES palette:
+            if (palette != null) return palette[pidx];
+
+            // My lame, colorblind attempt at palette mapping:
             switch (pidx)
             {
             // :)
@@ -815,6 +847,10 @@ namespace SolsticeVisualizer
 
         private Color getColorByBGPalette(int pidx)
         {
+            // Uses NES palette:
+            if (palette != null) return palette[pidx];
+
+            // My lame, colorblind attempt at palette mapping:
             switch (pidx)
             {
             // :)
@@ -882,20 +918,9 @@ namespace SolsticeVisualizer
             // Draw the wall outline:
             GL.Color3(0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            drawOpenCube(room.Width, 8.0f, room.Height);
+            GL.Translate(-0.01f, -0.01f, -0.01f);
+            drawOpenCube(room.Width + 0.02f, 8.0f + 0.02f, room.Height + 0.02f);
             GL.PopMatrix();
-
-            // Draw floor sections:
-            for (int r = 0; r < room.Height; ++r)
-                for (int c = 0; c < room.Width; ++c)
-                    if (room.FloorVisible[r, c])
-                    {
-                        drawFloor(room.Floor1Cosmetic, c, r);
-                    }
-                    else if (room.Floor2Behavior != 0)
-                    {
-                        drawFloor(room.Floor2Cosmetic, c, r);
-                    }
 
             // Draw exits on the walls:
             GL.Color3(0.4f, 0.4f, 0.95f);
@@ -903,29 +928,29 @@ namespace SolsticeVisualizer
             if (room.HasExitNW)
             {
                 GL.PushMatrix();
-                GL.Translate(0 - rmHalfWidth, room.ExitNW.Z * zscale, rmHalfHeight - (room.ExitNW.W + 2) + 0.5f);
-                drawLeftWall(4.0f, 1.0f);
+                GL.Translate(0 - rmHalfWidth, room.ExitNW.Z * zscale + 0.01f, rmHalfHeight - (room.ExitNW.W + 2) + 0.5f);
+                drawLeftWall(3.99f, 0.99f);
                 GL.PopMatrix();
             }
             if (room.HasExitNE)
             {
                 GL.PushMatrix();
-                GL.Translate((room.ExitNE.W + 1) - rmHalfWidth + 0.5f, room.ExitNE.Z * zscale, 0 - rmHalfHeight);
-                drawFrontWall(1.0f, 4.0f);
+                GL.Translate((room.ExitNE.W + 1) - rmHalfWidth + 0.5f, room.ExitNE.Z * zscale + 0.01f, 0 - rmHalfHeight);
+                drawFrontWall(0.99f, 3.99f);
                 GL.PopMatrix();
             }
             if (room.HasExitSE)
             {
                 GL.PushMatrix();
-                GL.Translate(rmHalfWidth, room.ExitSE.Z * zscale, rmHalfHeight - (room.ExitSE.W + 2) + 0.5f);
-                drawRightWall(4.0f, 1.0f);
+                GL.Translate(rmHalfWidth, room.ExitSE.Z * zscale + 0.01f, rmHalfHeight - (room.ExitSE.W + 2) + 0.5f);
+                drawRightWall(3.99f, 0.99f);
                 GL.PopMatrix();
             }
             if (room.HasExitSW)
             {
                 GL.PushMatrix();
-                GL.Translate((room.ExitSW.W + 1) - rmHalfWidth + 0.5f, room.ExitSW.Z * zscale, rmHalfHeight);
-                drawFrontWall(1.0f, 4.0f);
+                GL.Translate((room.ExitSW.W + 1) - rmHalfWidth + 0.5f, room.ExitSW.Z * zscale + 0.01f, rmHalfHeight);
+                drawFrontWall(0.99f, 3.99f);
                 GL.PopMatrix();
             }
 
@@ -938,8 +963,8 @@ namespace SolsticeVisualizer
                     if ((room.WindowMaskNW & (1 << (7 - i))) == 0) continue;
 
                     GL.PushMatrix();
-                    GL.Translate(0 - rmHalfWidth, 4 * zscale, rmHalfHeight - (i + 1) + 0.5f);
-                    drawLeftWall(2.0f, 1.0f);
+                    GL.Translate(0 - rmHalfWidth, 4 * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                    drawLeftWall(1.99f, 0.99f);
                     GL.PopMatrix();
                 }
             }
@@ -951,12 +976,25 @@ namespace SolsticeVisualizer
                     if ((room.WindowMaskNE & (1 << (7 - i))) == 0) continue;
 
                     GL.PushMatrix();
-                    GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 4 * zscale, 0 - rmHalfHeight);
-                    drawFrontWall(1.0f, 2.0f);
+                    GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 4 * zscale + 0.01f, 0 - rmHalfHeight);
+                    drawFrontWall(0.99f, 1.99f);
                     GL.PopMatrix();
                 }
             }
+            // Enable fill mode again:
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
+            // Draw floor sections:
+            for (int r = 0; r < room.Height; ++r)
+                for (int c = 0; c < room.Width; ++c)
+                    if (room.FloorVisible[r, c])
+                    {
+                        drawFloor(room.Floor1Cosmetic, c, r);
+                    }
+                    else if (room.Floor2Behavior != 0)
+                    {
+                        drawFloor(room.Floor2Cosmetic, c, r);
+                    }
 
             // Draw static blocks:
             for (int i = 0; i < room.StaticBlocks.Length; ++i)

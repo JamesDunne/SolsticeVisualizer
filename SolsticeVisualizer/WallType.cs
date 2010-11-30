@@ -10,7 +10,7 @@ namespace SolsticeVisualizer
         Bricks2 = 0x01,
         Cave1 = 0x02,
         Crates1 = 0x03,
-        Bricks3 = 0x04, 
+        Bricks3 = 0x04,
         Bricks4 = 0x05,
         Fence1 = 0x06,
         Stone1 = 0x07,

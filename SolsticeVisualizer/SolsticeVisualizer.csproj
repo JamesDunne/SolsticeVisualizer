@@ -98,6 +98,80 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Solstice %28U%29.nes">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Solstice %28U%29.pal">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Textures\Floor\ForestDirt.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Floor\Gravel.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Floor\SmallTiles.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\FullskiesNight0002_2_S.jpg" />
+    <Content Include="Textures\Hedges0035_2_S.jpg" />
+    <Content Include="Textures\Moss0165_2_S.jpg" />
+    <Content Include="Textures\Originals\BarkPine0003_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\BrickOldDirty0076_9_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\BrickOldSharp0080_12_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\BrickOldSharp0106_7_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\BrickOldSharp0212_17_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\FullskiesNight0002_2_S.jpg" />
+    <Content Include="Textures\Originals\GrassDead0068_13_S.jpg" />
+    <Content Include="Textures\Originals\Gravel0092_5_S.jpg" />
+    <Content Include="Textures\Originals\Hedges0035_2_S.jpg" />
+    <Content Include="Textures\Originals\Ivy0009_2_S.jpg" />
+    <Content Include="Textures\Originals\MarbleGreen0001_39_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\Moss0165_2_S.jpg" />
+    <Content Include="Textures\Originals\RockLayered0023_2_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\RockRed0038_2_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\Trees0055_2_S.png" />
+    <Content Include="Textures\Originals\Wood.jpg" />
+    <Content Include="Textures\Originals\WoodFine0044_9_S.jpg" />
+    <Content Include="Textures\Originals\WoodPlanksFences0008_1_S.jpg" />
+    <Content Include="Textures\Walls\Bricks1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Bricks2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Bricks3.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Bricks4.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Fence1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Fence2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Stone1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Stone2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Stone3.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Trees1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Trees2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Trees3.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

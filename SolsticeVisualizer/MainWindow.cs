@@ -10,6 +10,8 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Platform;
 using System.Drawing;
 using System.IO;
+using System.Drawing.Imaging;
+using System.Windows.Forms;
 
 namespace SolsticeVisualizer
 {
@@ -36,6 +38,8 @@ namespace SolsticeVisualizer
         private float rmHalfWidth;
         private float rmHalfHeight;
 
+        int[] wallTextures;
+
         public MainWindow() : base(800, 600) { }
 
         protected override void OnLoad(EventArgs e)
@@ -46,43 +50,7 @@ namespace SolsticeVisualizer
             int major = (int)version[0];
             int minor = (int)version[2];
 
-            GL.ClearColor(System.Drawing.Color.Black);
-            GL.Enable(EnableCap.DepthTest);
-            GL.LineWidth(1.2f);
-
-            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(-8f, 4f, 4f, 0.0f));
-            //GL.Light(LightName.Light0, LightParameter.SpotDirection, new Vector4(-1.0f, 0.0f, 0.0f, 0.0f));
-            GL.Light(LightName.Light0, LightParameter.Ambient, new Color4(0f, 0f, 0f, 1.0f));
-            GL.Light(LightName.Light0, LightParameter.Diffuse, new Color4(1f, 1f, 1f, 1.0f));
-            GL.Light(LightName.Light0, LightParameter.Specular, new Color4(1f, 1f, 1f, 1.0f));
-            GL.LightModel(LightModelParameter.LightModelAmbient, new float[4] { 0.35f, 0.35f, 0.35f, 1.0f });
-            GL.Enable(EnableCap.Lighting);
-            GL.Enable(EnableCap.Light0);
-
-            // Enable alpha blending for partially-visible blocks:
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
-
-            // Enable all glColor calls to set the lighting material's ambient and diffuse color:
-            GL.Enable(EnableCap.ColorMaterial);
-            GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.AmbientAndDiffuse);
-            //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Specular, new Color4(0.2f, 0.2f, 0.2f, 1f));
-            //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Emission, new Color4(0f, 0f, 0f, 1f));
-
-            // Flat shading model gives more of a NES feel:
-            GL.ShadeModel(ShadingModel.Smooth);
-
-            // Avoid stitching lines as much as possible, especially when outlining solid quads:
-            GL.Enable(EnableCap.PolygonOffsetFill);
-            GL.PolygonOffset(1f, 1f);
-
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-
-            GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);	// Use The Good Calculations
-            GL.Enable(EnableCap.LineSmooth);			// Enable Anti-Aliasing
-
-            // Cull back-facing polygons:
-            GL.CullFace(CullFaceMode.Back);
+            InitializeGL();
 
             // Process command-line args:
             Queue<string> args = new Queue<string>(Environment.GetCommandLineArgs());
@@ -123,6 +91,101 @@ namespace SolsticeVisualizer
             loadRoom(firstRoom);
 
             Keyboard.KeyDown += new EventHandler<OpenTK.Input.KeyboardKeyEventArgs>(Keyboard_KeyDown);
+        }
+
+        private void InitializeGL()
+        {
+            GL.ClearColor(System.Drawing.Color.Black);
+            GL.Enable(EnableCap.DepthTest);
+            GL.LineWidth(1.2f);
+
+            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(-8f, 4f, 4f, 0.0f));
+            //GL.Light(LightName.Light0, LightParameter.SpotDirection, new Vector4(-1.0f, 0.0f, 0.0f, 0.0f));
+            GL.Light(LightName.Light0, LightParameter.Ambient, new Color4(0f, 0f, 0f, 1.0f));
+            GL.Light(LightName.Light0, LightParameter.Diffuse, new Color4(1f, 1f, 1f, 1.0f));
+            GL.Light(LightName.Light0, LightParameter.Specular, new Color4(1f, 1f, 1f, 1.0f));
+            GL.LightModel(LightModelParameter.LightModelAmbient, new float[4] { 0.35f, 0.35f, 0.35f, 1.0f });
+            GL.Enable(EnableCap.Lighting);
+            GL.Enable(EnableCap.Light0);
+
+            // Enable alpha blending for partially-visible blocks:
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+
+            // Enable all glColor calls to set the lighting material's ambient and diffuse color:
+            GL.Enable(EnableCap.ColorMaterial);
+            GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.AmbientAndDiffuse);
+            //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Specular, new Color4(0.2f, 0.2f, 0.2f, 1f));
+            //GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Emission, new Color4(0f, 0f, 0f, 1f));
+
+            // Flat shading model gives more of a NES feel:
+            GL.ShadeModel(ShadingModel.Smooth);
+
+            // Avoid stitching lines as much as possible, especially when outlining solid quads:
+            GL.Enable(EnableCap.PolygonOffsetFill);
+            GL.PolygonOffset(1f, 1f);
+
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
+            GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);	// Use The Good Calculations
+            GL.Enable(EnableCap.LineSmooth);			// Enable Anti-Aliasing
+
+            // Cull back-facing polygons:
+            GL.CullFace(CullFaceMode.Back);
+
+            GL.Enable(EnableCap.Texture2D);
+
+            GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
+
+            // Set up an array of texture IDs that maps by WallType enum:
+            wallTextures = new int[0x16 + 1];
+            // Let's assume -1 is an invalid ID:
+            for (int i = 0; i <= 0x16; ++i)
+                wallTextures[i] = -1;
+
+            foreach (var fi in new System.IO.DirectoryInfo(@"Textures\Walls").GetFiles())
+            {
+                if (fi.Extension.Length == 0) continue;
+
+                string fileName = fi.Name.Substring(0, fi.Name.Length - fi.Extension.Length);
+
+                // Parse the file name as an enum to bind it:
+                WallType wall = (WallType)Enum.Parse(typeof(WallType), fileName);
+
+                // Load the texture data into graphics memory:
+                using (var bitmap = new Bitmap(fi.FullName))
+                {
+                    wallTextures[(int)wall] = LoadTexture(bitmap);
+                }
+            }
+        }
+
+        int LoadTexture(Bitmap bitmap)
+        {
+            int texture;
+
+            GL.GenTextures(1, out texture);
+            GL.BindTexture(TextureTarget.Texture2D, texture);
+
+            BitmapData data = bitmap.LockBits(
+                new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly,
+                System.Drawing.Imaging.PixelFormat.Format32bppArgb
+            );
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
+                OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+
+            bitmap.UnlockBits(data);
+
+            // Indicates wrapping texture:
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            return texture;
         }
 
         Color[] palette = null;
@@ -221,9 +284,13 @@ namespace SolsticeVisualizer
             // Draw box left:
             GL.Begin(BeginMode.Quads);
             GL.Normal3(-1f, 0f, 0f);
+            GL.TexCoord2(0f, 0f);
             GL.Vertex3(0f, z1, y1);
+            GL.TexCoord2(1f, 0f);
             GL.Vertex3(0f, z1, y2);
+            GL.TexCoord2(1f, 1f);
             GL.Vertex3(0f, z2, y2);
+            GL.TexCoord2(0f, 1f);
             GL.Vertex3(0f, z2, y1);
             GL.End();
         }
@@ -240,9 +307,13 @@ namespace SolsticeVisualizer
             // Draw box right:
             GL.Begin(BeginMode.Quads);
             GL.Normal3(1f, 0f, 0f);
+            GL.TexCoord2(0f, 1f);
             GL.Vertex3(0f, z1, y2);
+            GL.TexCoord2(0f, 0f);
             GL.Vertex3(0f, z1, y1);
+            GL.TexCoord2(1f, 0f);
             GL.Vertex3(0f, z2, y1);
+            GL.TexCoord2(1f, 1f);
             GL.Vertex3(0f, z2, y2);
             GL.End();
         }
@@ -259,9 +330,13 @@ namespace SolsticeVisualizer
             // Draw box front:
             GL.Begin(BeginMode.Quads);
             GL.Normal3(0f, 0f, 1f);
+            GL.TexCoord2(0f, 0f);
             GL.Vertex3(x1, z1, 0f);
+            GL.TexCoord2(1f, 0f);
             GL.Vertex3(x2, z1, 0f);
+            GL.TexCoord2(1f, 1f);
             GL.Vertex3(x2, z2, 0f);
+            GL.TexCoord2(0f, 1f);
             GL.Vertex3(x1, z2, 0f);
             GL.End();
         }
@@ -278,9 +353,13 @@ namespace SolsticeVisualizer
             // Draw box back:
             GL.Begin(BeginMode.Quads);
             GL.Normal3(0f, 0f, -1f);
+            GL.TexCoord2(0f, 1f);
             GL.Vertex3(x1, z2, 0f);
+            GL.TexCoord2(1f, 1f);
             GL.Vertex3(x2, z2, 0f);
+            GL.TexCoord2(1f, 0f);
             GL.Vertex3(x2, z1, 0f);
+            GL.TexCoord2(0f, 0f);
             GL.Vertex3(x1, z1, 0f);
             GL.End();
         }
@@ -399,9 +478,13 @@ namespace SolsticeVisualizer
 
             GL.Begin(BeginMode.Quads);
             GL.Normal3(0f, 1f, 0f);
+            GL.TexCoord2(0f, 0f);
             GL.Vertex3(-w2, z * zscale, -h2);
+            GL.TexCoord2(0f, 1f);
             GL.Vertex3(-w2, z * zscale, h2);
+            GL.TexCoord2(1f, 1f);
             GL.Vertex3(w2, z * zscale, h2);
+            GL.TexCoord2(1f, 0f);
             GL.Vertex3(w2, z * zscale, -h2);
             GL.End();
         }
@@ -1114,110 +1197,143 @@ namespace SolsticeVisualizer
                 GL.PopMatrix();
             }
 
-            // Draw windows on the walls:
+            // Draw outlines for exits:
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
-            // Northwest wall:
+            setBGGLColor(room.Palette[1]);
+
+            for (int i = 0; i < room.Height; ++i)
             {
-                setBGGLColor(room.Palette[1]);
-                for (int i = 0; i < room.Height; ++i)
+                bool isExitRow = room.HasExitNW && (room.ExitNW.W == (i - 1));
+                if (isExitRow)
                 {
-                    bool isExitRow = room.HasExitNW && (room.ExitNW.W == (i - 1));
-                    bool hasWindow = (room.WindowMaskNW & (1 << (7 - i))) != 0;
-                    if (isExitRow)
-                    {
-                        // Draw the exit above the rest of the wall:
-                        GL.PushMatrix();
-                        GL.Translate(-rmHalfWidth, room.ExitNW.Z * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                        drawLeftWall(3.99f, 1f);
-                        GL.PopMatrix();
-
-                        if (room.ExitNW.Z > 0)
-                        {
-                            // Draw lower part:
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-                            GL.PushMatrix();
-                            GL.Translate(-rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                            drawLeftWall(room.ExitNW.Z - 0.01f, 1f);
-                            GL.PopMatrix();
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                        }
-                        float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNW.Z + 4f));
-                        if (z2 > 0)
-                        {
-                            // Draw upper part:
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-                            GL.PushMatrix();
-                            GL.Translate(-rmHalfWidth, (room.ExitNW.Z + 4f) * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                            drawLeftWall(z2 - 0.01f, 1f);
-                            GL.PopMatrix();
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                        }
-                    }
-                    else
-                    {
-                        // Just a wall or not:
-                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-                        GL.PushMatrix();
-                        GL.Translate(0 - rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                        drawLeftWall(hasWindow ? 3.99f : 7.99f, 1f);
-                        GL.PopMatrix();
-                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                    }
+                    // Draw the exit above the rest of the wall:
+                    GL.PushMatrix();
+                    GL.Translate(-rmHalfWidth, room.ExitNW.Z * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                    drawLeftWall(3.99f, 1f);
+                    GL.PopMatrix();
                 }
             }
 
-            // Northeast wall:
+            for (int i = 0; i < room.Width; ++i)
             {
-                setBGGLColor(room.Palette[1]);
-                for (int i = 0; i < room.Width; ++i)
+                bool isExitRow = room.HasExitNE && (room.ExitNE.W == room.Width - (i + 2));
+                if (isExitRow)
                 {
-                    bool isExitRow = room.HasExitNE && (room.ExitNE.W == room.Width - (i + 2));
-                    bool hasWindow = (room.WindowMaskNE & (1 << (7 - i))) != 0;
-                    if (isExitRow)
-                    {
-                        // Draw the exit above the rest of the wall:
-                        GL.PushMatrix();
-                        GL.Translate(rmHalfWidth - (i + 1) + 0.5f, room.ExitNE.Z * zscale + 0.01f, 0 - rmHalfHeight);
-                        drawFrontWall(1f, 3.99f);
-                        GL.PopMatrix();
+                    // Draw the exit above the rest of the wall:
+                    GL.PushMatrix();
+                    GL.Translate(rmHalfWidth - (i + 1) + 0.5f, room.ExitNE.Z * zscale + 0.01f, 0 - rmHalfHeight);
+                    drawFrontWall(1f, 3.99f);
+                    GL.PopMatrix();
+                }
+            }
 
-                        if (room.ExitNE.Z > 0)
-                        {
-                            // Draw lower part:
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-                            GL.PushMatrix();
-                            GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
-                            drawFrontWall(1f, room.ExitNE.Z - 0.01f);
-                            GL.PopMatrix();
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                        }
-                        float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNE.Z + 4f));
-                        if (z2 > 0)
-                        {
-                            // Draw upper part:
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-                            GL.PushMatrix();
-                            GL.Translate(rmHalfWidth - (i + 1) + 0.5f, (room.ExitNE.Z + 4f) * zscale + 0.01f, 0 - rmHalfHeight);
-                            drawFrontWall(1f, z2 - 0.01f);
-                            GL.PopMatrix();
-                            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-                        }
-                    }
-                    else
+            // Enable fill mode for drawing solid wall sections:
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
+            // ---- Northwest wall:
+
+            // Enable texturing if we have a texture to use:
+            int tex = wallTextures[(int)room.WallNW];
+            if (tex != -1)
+            {
+                GL.Enable(EnableCap.Texture2D);
+                GL.BindTexture(TextureTarget.Texture2D, tex);
+            }
+
+            setBGGLColor(room.Palette[1]);
+
+            for (int i = 0; i < room.Height; ++i)
+            {
+                bool isExitRow = room.HasExitNW && (room.ExitNW.W == (i - 1));
+                bool hasWindow = (room.WindowMaskNW & (1 << (7 - i))) != 0;
+                if (isExitRow)
+                {
+                    if (room.ExitNW.Z > 0)
                     {
-                        // Just a window or not:
-                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                        // Draw lower part:
+                        GL.PushMatrix();
+                        GL.Translate(-rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                        drawLeftWall(room.ExitNW.Z - 0.01f, 1f);
+                        GL.PopMatrix();
+                    }
+                    float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNW.Z + 4f));
+                    if (z2 > 0)
+                    {
+                        // Draw upper part:
+                        GL.PushMatrix();
+                        GL.Translate(-rmHalfWidth, (room.ExitNW.Z + 4f) * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                        drawLeftWall(z2 - 0.01f, 1f);
+                        GL.PopMatrix();
+                    }
+                }
+                else
+                {
+                    // Just a wall or not:
+                    GL.PushMatrix();
+                    GL.Translate(0 - rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
+                    drawLeftWall(hasWindow ? 3.99f : 7.99f, 1f);
+                    GL.PopMatrix();
+                }
+            }
+
+            // Disable texturing if it was enabled:
+            if (tex != -1)
+            {
+                GL.Disable(EnableCap.Texture2D);
+            }
+
+            // ---- Northeast wall:
+
+            // Enable texturing if we have a texture to use:
+            tex = wallTextures[(int)room.WallNE];
+            if (tex != -1)
+            {
+                GL.Enable(EnableCap.Texture2D);
+                GL.BindTexture(TextureTarget.Texture2D, tex);
+            }
+
+            setBGGLColor(room.Palette[1]);
+
+            for (int i = 0; i < room.Width; ++i)
+            {
+                bool isExitRow = room.HasExitNE && (room.ExitNE.W == room.Width - (i + 2));
+                bool hasWindow = (room.WindowMaskNE & (1 << (7 - i))) != 0;
+                if (isExitRow)
+                {
+                    if (room.ExitNE.Z > 0)
+                    {
+                        // Draw lower part:
                         GL.PushMatrix();
                         GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
-                        drawFrontWall(1f, hasWindow ? 3.99f : 7.99f);
+                        drawFrontWall(1f, room.ExitNE.Z - 0.01f);
                         GL.PopMatrix();
-                        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
                     }
+                    float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNE.Z + 4f));
+                    if (z2 > 0)
+                    {
+                        // Draw upper part:
+                        GL.PushMatrix();
+                        GL.Translate(rmHalfWidth - (i + 1) + 0.5f, (room.ExitNE.Z + 4f) * zscale + 0.01f, 0 - rmHalfHeight);
+                        drawFrontWall(1f, z2 - 0.01f);
+                        GL.PopMatrix();
+                    }
+                }
+                else
+                {
+                    // Just a window or not:
+                    GL.PushMatrix();
+                    GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
+                    drawFrontWall(1f, hasWindow ? 3.99f : 7.99f);
+                    GL.PopMatrix();
                 }
             }
 
-            // Enable fill mode again:
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            // Disable texturing if it was enabled:
+            if (tex != -1)
+            {
+                GL.Disable(EnableCap.Texture2D);
+            }
 
             // Draw floor sections:
             for (int r = 0; r < room.Height; ++r)

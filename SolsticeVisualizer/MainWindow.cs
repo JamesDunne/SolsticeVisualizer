@@ -39,6 +39,7 @@ namespace SolsticeVisualizer
         private float rmHalfHeight;
 
         int[] wallTextures;
+        int[] floorTextures;
 
         public MainWindow() : base(800, 600) { }
 
@@ -137,25 +138,47 @@ namespace SolsticeVisualizer
 
             GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
 
+            #region Load wall textures
+
             // Set up an array of texture IDs that maps by WallType enum:
             wallTextures = new int[0x16 + 1];
             // Let's assume -1 is an invalid ID:
             for (int i = 0; i <= 0x16; ++i)
                 wallTextures[i] = -1;
 
-            foreach (var fi in new System.IO.DirectoryInfo(@"Textures\Walls").GetFiles())
+            loadDirectoryToTextures<WallType>(@"Textures\Walls", wallTextures, e => (int)e);
+
+            #endregion
+
+            #region Load floor textures
+
+            // Set up an array of texture IDs that maps by FloorCosmeticType enum:
+            floorTextures = new int[16];
+
+            // Let's assume -1 is an invalid ID:
+            for (int i = 0; i < 16; ++i)
+                floorTextures[i] = -1;
+
+            loadDirectoryToTextures<FloorCosmeticType>(@"Textures\Floor", floorTextures, e => (int)e);
+
+            #endregion
+        }
+
+        private void loadDirectoryToTextures<T>(string path, int[] textures, Converter<T, int> toIndex) where T : struct
+        {
+            foreach (var fi in new System.IO.DirectoryInfo(path).GetFiles())
             {
                 if (fi.Extension.Length == 0) continue;
 
                 string fileName = fi.Name.Substring(0, fi.Name.Length - fi.Extension.Length);
 
                 // Parse the file name as an enum to bind it:
-                WallType wall = (WallType)Enum.Parse(typeof(WallType), fileName);
+                T texEnum = (T)Enum.Parse(typeof(T), fileName);
 
                 // Load the texture data into graphics memory:
                 using (var bitmap = new Bitmap(fi.FullName))
                 {
-                    wallTextures[(int)wall] = LoadTexture(bitmap);
+                    textures[toIndex(texEnum)] = LoadTexture(bitmap);
                 }
             }
         }
@@ -272,7 +295,7 @@ namespace SolsticeVisualizer
 
         const float zscale = 0.3333333f;
 
-        private void drawLeftWall(float z, float h)
+        private void drawLeftWall(float h, float z, float s1, float t1)
         {
             float hHalf = h * 0.5f;
 
@@ -281,17 +304,46 @@ namespace SolsticeVisualizer
             float z1 = 0;
             float z2 = z * zscale;
 
+            float s2 = s1 + h / 2.0f;
+            float t2 = t1 + z / 8.0f;
+
             // Draw box left:
             GL.Begin(BeginMode.Quads);
             GL.Normal3(-1f, 0f, 0f);
-            GL.TexCoord2(0f, 0f);
+            GL.TexCoord2(s1, t1);
             GL.Vertex3(0f, z1, y1);
-            GL.TexCoord2(1f, 0f);
+            GL.TexCoord2(s2, t1);
             GL.Vertex3(0f, z1, y2);
-            GL.TexCoord2(1f, 1f);
+            GL.TexCoord2(s2, t2);
             GL.Vertex3(0f, z2, y2);
-            GL.TexCoord2(0f, 1f);
+            GL.TexCoord2(s1, t2);
             GL.Vertex3(0f, z2, y1);
+            GL.End();
+        }
+
+        private void drawFrontWall(float w, float z, float s1, float t1)
+        {
+            float wHalf = w * 0.5f;
+
+            float x1 = -wHalf;
+            float x2 = wHalf;
+            float z1 = 0;
+            float z2 = z * zscale;
+
+            float s2 = s1 + w / 2.0f;
+            float t2 = t1 + z / 8.0f;
+
+            // Draw box front:
+            GL.Begin(BeginMode.Quads);
+            GL.Normal3(0f, 0f, 1f);
+            GL.TexCoord2(s1, t1);
+            GL.Vertex3(x1, z1, 0f);
+            GL.TexCoord2(s2, t1);
+            GL.Vertex3(x2, z1, 0f);
+            GL.TexCoord2(s2, t2);
+            GL.Vertex3(x2, z2, 0f);
+            GL.TexCoord2(s1, t2);
+            GL.Vertex3(x1, z2, 0f);
             GL.End();
         }
 
@@ -315,29 +367,6 @@ namespace SolsticeVisualizer
             GL.Vertex3(0f, z2, y1);
             GL.TexCoord2(1f, 1f);
             GL.Vertex3(0f, z2, y2);
-            GL.End();
-        }
-
-        private void drawFrontWall(float w, float z)
-        {
-            float wHalf = w * 0.5f;
-
-            float x1 = -wHalf;
-            float x2 = wHalf;
-            float z1 = 0;
-            float z2 = z * zscale;
-
-            // Draw box front:
-            GL.Begin(BeginMode.Quads);
-            GL.Normal3(0f, 0f, 1f);
-            GL.TexCoord2(0f, 0f);
-            GL.Vertex3(x1, z1, 0f);
-            GL.TexCoord2(1f, 0f);
-            GL.Vertex3(x2, z1, 0f);
-            GL.TexCoord2(1f, 1f);
-            GL.Vertex3(x2, z2, 0f);
-            GL.TexCoord2(0f, 1f);
-            GL.Vertex3(x1, z2, 0f);
             GL.End();
         }
 
@@ -458,23 +487,26 @@ namespace SolsticeVisualizer
             GL.End();
         }
 
-        private void drawOutlinedSolidFlat(float w, float z, float h)
+        private void drawOutlinedSolidFlat(float w, float z, float h, float s1, float t1)
         {
             GL.PushAttrib(AttribMask.AllAttribBits);
 
-            drawSolidFlat(w, z, h);
+            drawSolidFlat(w, z, h, s1, t1);
 
             GL.Color4(0f, 0f, 0f, 1f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-            drawSolidFlat(w, z, h);
+            drawSolidFlat(w, z, h, s1, t1);
 
             GL.PopAttrib();
         }
 
-        private void drawSolidFlat(float w, float z, float h)
+        private void drawSolidFlat(float w, float z, float h, float s1, float t1)
         {
             float w2 = w * 0.5f;
             float h2 = h * 0.5f;
+
+            float s2 = s1 + w * 0.5f;
+            float t2 = t1 + h * 0.5f;
 
             GL.Begin(BeginMode.Quads);
             GL.Normal3(0f, 1f, 0f);
@@ -987,35 +1019,43 @@ namespace SolsticeVisualizer
 
         private void drawFloor(FloorCosmeticType floorCosmeticType, int c, int r)
         {
+            int tex;
+
             GL.PushMatrix();
             GL.Translate(c - rmHalfWidth + 0.5f, 0.0f, r - rmHalfHeight + 0.5f);
             switch (floorCosmeticType)
             {
-                case FloorCosmeticType.Stone:
-                    setBGGLColor(room.Palette[1]);
-                    drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f);
+                case FloorCosmeticType.Empty:
                     break;
                 case FloorCosmeticType.BedOfSpikes2:
                 case FloorCosmeticType.BedOfSpikes:
                     setBGGLColor(room.Palette[1], 0.1f);
-                    drawSolidFlat(1.0f, 0.0f, 1.0f);
+                    drawSolidFlat(1.0f, 0.0f, 1.0f, (c % 4) * 0.25f, (r % 4) * 0.25f);
                     setBGGLColor(room.Palette[2]);
                     drawBedOfSpikes();
                     break;
+#if false
                 case FloorCosmeticType.SmallTiles:
                     setBGGLColor(room.Palette[1]);
                     drawOutlinedSmallTiles(1.0f, 0.0f, 1.0f);
                     break;
-                case FloorCosmeticType.Empty:
-                    break;
-                case FloorCosmeticType.ForestDirt:
-                case FloorCosmeticType.Gravel:
-                    setBGGLColor(room.Palette[1]);
-                    drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f);
-                    break;
+#endif
                 default:
-                    setBGGLColor(room.Palette[1]);
-                    drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f);
+                    tex = floorTextures[(int)floorCosmeticType];
+                    if (tex != -1)
+                    {
+                        GL.Enable(EnableCap.Texture2D);
+                        GL.BindTexture(TextureTarget.Texture2D, tex);
+                    }
+                    setBGGLColor(room.Palette[1], 0.25f);
+                    if (tex != -1)
+                        drawSolidFlat(1.0f, 0.0f, 1.0f, (c % 4) * 0.25f, (r % 4) * 0.25f);
+                    else
+                        drawOutlinedSolidFlat(1.0f, 0.0f, 1.0f, (c % 4) * 0.25f, (r % 4) * 0.25f);
+                    if (tex != -1)
+                    {
+                        GL.Disable(EnableCap.Texture2D);
+                    }
                     break;
             }
             GL.PopMatrix();
@@ -1144,7 +1184,7 @@ namespace SolsticeVisualizer
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             //Matrix4 lookat = Matrix4.LookAt(7, 5, 7, 1, 1, 1, 0, 1, 0);
-            Matrix4 lookat = Matrix4.LookAt(room.Width / 2 + 4, 4, room.Height / 2 + 4, 0, 1, 0, 0, 1, 0);
+            Matrix4 lookat = Matrix4.LookAt(room.Width / 2 + 4, 6, room.Height / 2 + 4, 0, 1, 0, 0, 1, 0);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadMatrix(ref lookat);
 
@@ -1166,12 +1206,13 @@ namespace SolsticeVisualizer
 
             // Draw exits on the walls:
             GL.Color3(0.4f, 0.4f, 0.95f);
+
 #if false
             if (room.HasExitNW)
             {
                 GL.PushMatrix();
                 GL.Translate(0 - rmHalfWidth, room.ExitNW.Z * zscale + 0.01f, rmHalfHeight - (room.ExitNW.W + 2) + 0.5f);
-                drawLeftWall(3.99f, 0.99f);
+                drawLeftWall(0.99f, 3.99f);
                 GL.PopMatrix();
             }
             if (room.HasExitNE)
@@ -1210,7 +1251,7 @@ namespace SolsticeVisualizer
                     // Draw the exit above the rest of the wall:
                     GL.PushMatrix();
                     GL.Translate(-rmHalfWidth, room.ExitNW.Z * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                    drawLeftWall(3.99f, 1f);
+                    drawLeftWall(1f, 3.99f, (i % 2) * 0.5f, room.ExitNW.Z / 8.0f);
                     GL.PopMatrix();
                 }
             }
@@ -1223,7 +1264,7 @@ namespace SolsticeVisualizer
                     // Draw the exit above the rest of the wall:
                     GL.PushMatrix();
                     GL.Translate(rmHalfWidth - (i + 1) + 0.5f, room.ExitNE.Z * zscale + 0.01f, 0 - rmHalfHeight);
-                    drawFrontWall(1f, 3.99f);
+                    drawFrontWall(1f, 3.99f, (i % 2) * 0.5f, room.ExitNE.Z / 8.0f);
                     GL.PopMatrix();
                 }
             }
@@ -1254,7 +1295,7 @@ namespace SolsticeVisualizer
                         // Draw lower part:
                         GL.PushMatrix();
                         GL.Translate(-rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                        drawLeftWall(room.ExitNW.Z - 0.01f, 1f);
+                        drawLeftWall(1f, room.ExitNW.Z - 0.01f, (i % 2) * 0.5f, 0f);
                         GL.PopMatrix();
                     }
                     float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNW.Z + 4f));
@@ -1263,7 +1304,7 @@ namespace SolsticeVisualizer
                         // Draw upper part:
                         GL.PushMatrix();
                         GL.Translate(-rmHalfWidth, (room.ExitNW.Z + 4f) * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                        drawLeftWall(z2 - 0.01f, 1f);
+                        drawLeftWall(1f, z2 - 0.01f, (i % 2) * 0.5f, (room.ExitNW.Z + 4f) / 8.0f);
                         GL.PopMatrix();
                     }
                 }
@@ -1272,7 +1313,7 @@ namespace SolsticeVisualizer
                     // Just a wall or not:
                     GL.PushMatrix();
                     GL.Translate(0 - rmHalfWidth, 0f * zscale + 0.01f, rmHalfHeight - (i + 1) + 0.5f);
-                    drawLeftWall(hasWindow ? 3.99f : 7.99f, 1f);
+                    drawLeftWall(1f, hasWindow ? 3.99f : 7.99f, (i % 2) * 0.5f, 0f);
                     GL.PopMatrix();
                 }
             }
@@ -1306,7 +1347,7 @@ namespace SolsticeVisualizer
                         // Draw lower part:
                         GL.PushMatrix();
                         GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
-                        drawFrontWall(1f, room.ExitNE.Z - 0.01f);
+                        drawFrontWall(1f, room.ExitNE.Z - 0.01f, (i % 2) * 0.5f, 0f);
                         GL.PopMatrix();
                     }
                     float z2 = ((hasWindow ? 4f : 8f) - (room.ExitNE.Z + 4f));
@@ -1315,7 +1356,7 @@ namespace SolsticeVisualizer
                         // Draw upper part:
                         GL.PushMatrix();
                         GL.Translate(rmHalfWidth - (i + 1) + 0.5f, (room.ExitNE.Z + 4f) * zscale + 0.01f, 0 - rmHalfHeight);
-                        drawFrontWall(1f, z2 - 0.01f);
+                        drawFrontWall(1f, z2 - 0.01f, (i % 2) * 0.5f, (room.ExitNE.Z + 4f) / 8.0f);
                         GL.PopMatrix();
                     }
                 }
@@ -1324,7 +1365,7 @@ namespace SolsticeVisualizer
                     // Just a window or not:
                     GL.PushMatrix();
                     GL.Translate(rmHalfWidth - (i + 1) + 0.5f, 0f * zscale + 0.01f, 0 - rmHalfHeight);
-                    drawFrontWall(1f, hasWindow ? 3.99f : 7.99f);
+                    drawFrontWall(1f, hasWindow ? 3.99f : 7.99f, (i % 2) * 0.5f, 0f);
                     GL.PopMatrix();
                 }
             }

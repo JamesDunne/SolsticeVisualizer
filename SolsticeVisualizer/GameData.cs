@@ -241,7 +241,7 @@ namespace SolsticeVisualizer
                     for (int c = 0; c < rm.Width; ++c)
                     {
                         rm.RenderFloor[r, c] = true;
-                        rm.FloorVisible[r, c] = (k[c] & (1 << (r + 1))) != 0;
+                        rm.FloorVisible[rm.Height - r - 1, c] = (k[c] & (1 << (7 - r))) != 0;
                     }
 
                 // Exits:

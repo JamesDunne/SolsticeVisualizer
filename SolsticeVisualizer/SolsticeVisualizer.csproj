@@ -115,6 +115,9 @@
     <Content Include="Textures\Floor\SmallTiles.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Textures\Floor\Stone.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\FullskiesNight0002_2_S.jpg" />
     <Content Include="Textures\Hedges0035_2_S.jpg" />
     <Content Include="Textures\Moss0165_2_S.jpg" />
@@ -129,13 +132,31 @@
     <Content Include="Textures\Originals\Hedges0035_2_S.jpg" />
     <Content Include="Textures\Originals\Ivy0009_2_S.jpg" />
     <Content Include="Textures\Originals\MarbleGreen0001_39_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\MetalFloorsBare0017_1_S.jpg" />
+    <Content Include="Textures\Originals\MetalFloorsRusted0018_1_S.jpg" />
+    <Content Include="Textures\Originals\MetalPlatesDucts0010_9_S.jpg" />
+    <Content Include="Textures\Originals\MetalPlatesNew0009_1_S.jpg" />
     <Content Include="Textures\Originals\Moss0165_2_S.jpg" />
     <Content Include="Textures\Originals\RockLayered0023_2_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\RockLayered0033_5_S.jpg" />
     <Content Include="Textures\Originals\RockRed0038_2_thumbhuge.jpg" />
+    <Content Include="Textures\Originals\RockSediment0029_7_S.jpg" />
     <Content Include="Textures\Originals\Trees0055_2_S.png" />
     <Content Include="Textures\Originals\Wood.jpg" />
     <Content Include="Textures\Originals\WoodFine0044_9_S.jpg" />
     <Content Include="Textures\Originals\WoodPlanksFences0008_1_S.jpg" />
+    <Content Include="Textures\Walls\Logs1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Logs2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Logs3.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Logs4.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\Walls\Bricks1.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -148,10 +169,25 @@
     <Content Include="Textures\Walls\Bricks4.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Textures\Walls\Fence1.jpg">
+    <Content Include="Textures\Walls\Cave1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Cave2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Cave3.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\Walls\Fence2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Fence1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Crates1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Walls\Crates2.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\Walls\Stone1.jpg">

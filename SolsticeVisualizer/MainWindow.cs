@@ -725,8 +725,10 @@ namespace SolsticeVisualizer
                 GL.Begin(BeginMode.QuadStrip);
                 for (int i = 0; i <= circlePoints; ++i)
                 {
-                    circleNormal(i, circlePoints, r * (r1 + r2) * 0.5f, 0f, z1, 0f);
+                    //circleNormal(i, circlePoints, r * (r1 + r2) * 0.5f, 0f, z1, 0f);
+                    circleNormal(i, circlePoints, r1, 0f, z1, 0f);
                     circleVertex(i, circlePoints, r * r1, 0f, (z * zscale + r * z1), 0f);
+                    circleNormal(i, circlePoints, r2, 0f, z2, 0f);
                     circleVertex(i, circlePoints, r * r2, 0f, (z * zscale + r * z2), 0f);
                 }
                 GL.End();
@@ -747,7 +749,8 @@ namespace SolsticeVisualizer
                 double jangle = j * 0.5d * Math.PI / (double)slices;
                 float z1 = (float)Math.Cos(jangle);
                 float r1 = (float)Math.Sin(jangle);
-                circleNormal(i, circlePoints, r * r1, 0f, -z1, 0f);
+                //circleNormal(i, circlePoints, r * r1, 0f, -z1, 0f);
+                circleNormal(i, circlePoints, r1, 0f, -z1, 0f);
                 circleVertex(i, circlePoints, r * r1, 0f, (z * zscale - r * z1), 0f);
             }
             GL.End();
@@ -765,8 +768,10 @@ namespace SolsticeVisualizer
                 GL.Begin(BeginMode.QuadStrip);
                 for (int i = 0; i <= circlePoints; ++i)
                 {
-                    circleNormal(i, circlePoints, r * (r1 + r2) * 0.5f, 0f, -z1, 0f);
+                    //circleNormal(i, circlePoints, r * (r1 + r2) * 0.5f, 0f, -z1, 0f);
+                    circleNormal(i, circlePoints, r1, 0f, -z1, 0f);
                     circleVertex(i, circlePoints, r * r1, 0f, (z * zscale - r * z1), 0f);
+                    circleNormal(i, circlePoints, r2, 0f, -z2, 0f);
                     circleVertex(i, circlePoints, r * r2, 0f, (z * zscale - r * z2), 0f);
                 }
                 GL.End();
